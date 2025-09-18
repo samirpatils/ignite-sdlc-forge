@@ -19,7 +19,8 @@ import {
   Edit3,
   Eye,
   Save,
-  X
+  X,
+  Settings
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -36,6 +37,17 @@ interface RFPDocument {
 interface BRDDocument {
   id: string;
   name: string;
+  version: number;
+  savedAt: string;
+  projectName: string;
+  status: 'Draft' | 'Final';
+  content?: string;
+}
+
+interface TechDocument {
+  id: string;
+  name: string;
+  type: 'HLD' | 'LLD' | 'Tech Spec';
   version: number;
   savedAt: string;
   projectName: string;
@@ -251,12 +263,153 @@ Development of a secure mobile banking application for iOS and Android platforms
     }
   ]);
 
-  const [viewingDocument, setViewingDocument] = useState<{ type: 'rfp' | 'brd'; document: RFPDocument | BRDDocument } | null>(null);
-  const [editingDocument, setEditingDocument] = useState<{ type: 'brd'; document: BRDDocument } | null>(null);
+  const [repositoryTechDocs, setRepositoryTechDocs] = useState<TechDocument[]>([
+    {
+      id: '1',
+      name: 'E-Commerce Platform - High Level Design',
+      type: 'HLD',
+      version: 1,
+      savedAt: '2024-01-17T09:30:00.000Z',
+      projectName: 'E-Commerce Platform Modernization',
+      status: 'Final',
+      content: `# High Level Design - E-Commerce Platform
+
+## 1. System Overview
+This document provides the high-level architecture for the E-Commerce platform modernization project.
+
+## 2. Architecture Components
+### 2.1 Frontend Layer
+- React 18+ with TypeScript
+- Redux for state management
+- Responsive design with Tailwind CSS
+
+### 2.2 API Gateway
+- RESTful API design
+- Authentication and authorization
+- Rate limiting and caching
+
+### 2.3 Backend Services
+- Microservices architecture
+- Node.js with Express framework
+- Database abstraction layer
+
+### 2.4 Data Layer
+- PostgreSQL for transactional data
+- Redis for caching
+- AWS S3 for file storage
+
+## 3. Security Architecture
+- JWT token-based authentication
+- Role-based access control
+- Data encryption at rest and in transit
+
+## 4. Deployment Architecture
+- Docker containerization
+- AWS ECS for orchestration
+- Load balancer configuration`
+    },
+    {
+      id: '2',
+      name: 'E-Commerce Platform - Low Level Design',
+      type: 'LLD',
+      version: 2,
+      savedAt: '2024-01-18T14:20:00.000Z',
+      projectName: 'E-Commerce Platform Modernization',
+      status: 'Draft',
+      content: `# Low Level Design - E-Commerce Platform
+
+## 1. Database Design
+### 1.1 User Management Tables
+- users (id, email, password_hash, created_at, updated_at)
+- user_profiles (user_id, first_name, last_name, phone, address)
+- user_roles (id, name, permissions)
+
+### 1.2 Product Management Tables
+- products (id, name, description, price, category_id, created_at)
+- categories (id, name, parent_id, description)
+- inventory (product_id, quantity, reserved_quantity)
+
+## 2. API Endpoints
+### 2.1 Authentication APIs
+- POST /api/auth/login
+- POST /api/auth/register
+- POST /api/auth/logout
+- GET /api/auth/me
+
+### 2.2 Product APIs
+- GET /api/products
+- GET /api/products/:id
+- POST /api/products (admin only)
+- PUT /api/products/:id (admin only)
+
+## 3. Component Architecture
+### 3.1 React Components
+- ProductList component
+- ProductCard component
+- ShoppingCart component
+- CheckoutForm component
+
+## 4. State Management
+- Redux store structure
+- Action creators and reducers
+- Middleware for async operations`
+    },
+    {
+      id: '3',
+      name: 'CRM System - Technical Specification',
+      type: 'Tech Spec',
+      version: 1,
+      savedAt: '2024-01-15T11:15:00.000Z',
+      projectName: 'Customer Relationship Management System',
+      status: 'Final',
+      content: `# Technical Specification - CRM System
+
+## 1. Technology Stack
+### Frontend
+- Framework: React 18 with TypeScript
+- State Management: Zustand
+- UI Library: Material-UI v5
+- Build Tool: Vite
+
+### Backend
+- Runtime: Node.js 18+
+- Framework: Express.js
+- Database: PostgreSQL 14+
+- ORM: Prisma
+
+## 2. System Requirements
+### Performance
+- Response time: < 200ms for API calls
+- Concurrent users: 1000+
+- Data retention: 7 years
+
+### Security
+- Authentication: OAuth 2.0 + JWT
+- Authorization: RBAC (Role-Based Access Control)
+- Data encryption: AES-256
+- API rate limiting: 100 requests/minute per user
+
+## 3. Integration Specifications
+### Third-party Services
+- Email: SendGrid API
+- SMS: Twilio API
+- Calendar: Google Calendar API
+- File storage: AWS S3
+
+## 4. Development Standards
+- Code style: ESLint + Prettier
+- Testing: Jest + React Testing Library
+- Documentation: JSDoc comments
+- Version control: Git with conventional commits`
+    }
+  ]);
+
+  const [viewingDocument, setViewingDocument] = useState<{ type: 'rfp' | 'brd' | 'tech'; document: RFPDocument | BRDDocument | TechDocument } | null>(null);
+  const [editingDocument, setEditingDocument] = useState<{ type: 'brd' | 'tech'; document: BRDDocument | TechDocument } | null>(null);
   const [editContent, setEditContent] = useState('');
   const [editName, setEditName] = useState('');
 
-  const handleViewDocument = (type: 'rfp' | 'brd', document: RFPDocument | BRDDocument) => {
+  const handleViewDocument = (type: 'rfp' | 'brd' | 'tech', document: RFPDocument | BRDDocument | TechDocument) => {
     setViewingDocument({ type, document });
   };
 
@@ -266,29 +419,53 @@ Development of a secure mobile banking application for iOS and Android platforms
     setEditName(document.name);
   };
 
+  const handleEditTechDoc = (document: TechDocument) => {
+    setEditingDocument({ type: 'tech', document });
+    setEditContent(document.content || '');
+    setEditName(document.name);
+  };
+
   const handleSaveEdit = () => {
     if (!editingDocument) return;
 
-    setRepositoryBRDs(prev => prev.map(brd => 
-      brd.id === editingDocument.document.id 
-        ? { 
-            ...brd, 
-            content: editContent, 
-            name: editName,
-            version: brd.version + 1,
-            savedAt: new Date().toISOString()
-          }
-        : brd
-    ));
+    if (editingDocument.type === 'brd') {
+      setRepositoryBRDs(prev => prev.map(brd => 
+        brd.id === editingDocument.document.id 
+          ? { 
+              ...brd, 
+              content: editContent, 
+              name: editName,
+              version: brd.version + 1,
+              savedAt: new Date().toISOString()
+            }
+          : brd
+      ));
+      toast({
+        title: "BRD Updated",
+        description: "Document has been saved successfully with a new version",
+      });
+    } else if (editingDocument.type === 'tech') {
+      setRepositoryTechDocs(prev => prev.map(doc => 
+        doc.id === editingDocument.document.id 
+          ? { 
+              ...doc, 
+              content: editContent, 
+              name: editName,
+              version: doc.version + 1,
+              savedAt: new Date().toISOString()
+            }
+          : doc
+      ));
+      toast({
+        title: "Technical Document Updated",
+        description: "Document has been saved successfully with a new version",
+      });
+    }
 
     setEditingDocument(null);
-    toast({
-      title: "BRD Updated",
-      description: "Document has been saved successfully with a new version",
-    });
   };
 
-  const handleDownload = (doc: RFPDocument | BRDDocument, type: 'rfp' | 'brd') => {
+  const handleDownload = (doc: RFPDocument | BRDDocument | TechDocument, type: 'rfp' | 'brd' | 'tech') => {
     const content = doc.content || '';
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -336,7 +513,7 @@ Development of a secure mobile banking application for iOS and Android platforms
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* RFP Documents Section */}
           <Card className="bg-gradient-card shadow-soft border-0">
             <CardHeader>
@@ -464,6 +641,86 @@ Development of a secure mobile banking application for iOS and Android platforms
               </div>
             </CardContent>
           </Card>
+
+          {/* Technical Design Documents Section */}
+          <Card className="bg-gradient-card shadow-soft border-0">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Technical Design Documents
+              </CardTitle>
+              <CardDescription>
+                High-Level Design, Low-Level Design, and Technical Specifications
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {repositoryTechDocs.map((doc) => (
+                  <Card key={doc.id} className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium">{doc.name}</h4>
+                          <Badge 
+                            variant={doc.type === 'HLD' ? 'default' : doc.type === 'LLD' ? 'secondary' : 'outline'}
+                            className="text-xs"
+                          >
+                            {doc.type}
+                          </Badge>
+                          <Badge 
+                            variant={doc.status === 'Final' ? 'default' : 'secondary'}
+                            className="text-xs"
+                          >
+                            {doc.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">{doc.projectName}</p>
+                        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {new Date(doc.savedAt).toLocaleDateString()}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Hash className="h-3 w-3" />
+                            Version {doc.version}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="gap-1"
+                          onClick={() => handleDownload(doc, 'tech')}
+                        >
+                          <Download className="h-3 w-3" />
+                          Export
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="gap-1"
+                          onClick={() => handleViewDocument('tech', doc)}
+                        >
+                          <Eye className="h-3 w-3" />
+                          View
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="gap-1"
+                          onClick={() => handleEditTechDoc(doc)}
+                        >
+                          <Edit3 className="h-3 w-3" />
+                          Edit
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
@@ -472,7 +729,9 @@ Development of a secure mobile banking application for iOS and Android platforms
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {viewingDocument?.type === 'rfp' ? <FileText className="h-5 w-5" /> : <CheckCircle className="h-5 w-5" />}
+              {viewingDocument?.type === 'rfp' ? <FileText className="h-5 w-5" /> : 
+               viewingDocument?.type === 'brd' ? <CheckCircle className="h-5 w-5" /> : 
+               <Settings className="h-5 w-5" />}
               {viewingDocument?.document.name}
             </DialogTitle>
           </DialogHeader>
@@ -492,7 +751,7 @@ Development of a secure mobile banking application for iOS and Android platforms
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Edit3 className="h-5 w-5" />
-              Edit BRD
+              {editingDocument?.type === 'brd' ? 'Edit BRD' : 'Edit Technical Document'}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
