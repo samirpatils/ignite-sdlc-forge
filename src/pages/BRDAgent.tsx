@@ -26,7 +26,10 @@ import {
   ChevronUp,
   Package,
   Plus,
-  Trash2
+  Trash2,
+  Archive,
+  Calendar,
+  Hash
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ModuleView } from "@/components/ModuleView";
@@ -140,6 +143,59 @@ Please ensure the BRD is detailed, actionable, and follows industry best practic
     projectName: string;
   }>>([]);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showRepository, setShowRepository] = useState(false);
+  const [repositoryRFPs] = useState([
+    {
+      id: '1',
+      name: 'E-Commerce Platform RFP',
+      fileName: 'ecommerce-rfp-v2.pdf',
+      uploadedAt: '2024-01-15T10:30:00.000Z',
+      size: '2.4 MB',
+      projectName: 'E-Commerce Platform Modernization'
+    },
+    {
+      id: '2', 
+      name: 'CRM System RFP',
+      fileName: 'crm-requirements.pdf',
+      uploadedAt: '2024-01-10T14:15:00.000Z',
+      size: '1.8 MB',
+      projectName: 'Customer Relationship Management System'
+    },
+    {
+      id: '3',
+      name: 'Mobile App RFP',
+      fileName: 'mobile-app-specs.docx',
+      uploadedAt: '2024-01-05T09:20:00.000Z',
+      size: '3.1 MB',
+      projectName: 'Mobile Banking Application'
+    }
+  ]);
+  const [repositoryBRDs] = useState([
+    {
+      id: '1',
+      name: 'BRD - E-Commerce Platform Modernization',
+      version: 2,
+      savedAt: '2024-01-16T11:45:00.000Z',
+      projectName: 'E-Commerce Platform Modernization',
+      status: 'Final'
+    },
+    {
+      id: '2',
+      name: 'BRD - CRM System Implementation',
+      version: 1,
+      savedAt: '2024-01-12T16:30:00.000Z',
+      projectName: 'Customer Relationship Management System',
+      status: 'Draft'
+    },
+    {
+      id: '3',
+      name: 'BRD - Mobile Banking App',
+      version: 3,
+      savedAt: '2024-01-08T13:20:00.000Z',
+      projectName: 'Mobile Banking Application',
+      status: 'Final'
+    }
+  ]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -318,25 +374,38 @@ This BRD serves as the foundation for the technical implementation and project e
       {/* Header */}
       <header className="bg-card border-b shadow-soft">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16 gap-4">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => navigate("/dashboard")}
-              className="gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Dashboard
-            </Button>
-            <Separator orientation="vertical" className="h-6" />
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-hero p-2 rounded-xl">
-                <Bot className="h-6 w-6 text-white" />
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => navigate("/dashboard")}
+                className="gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Dashboard
+              </Button>
+              <Separator orientation="vertical" className="h-6" />
+              <div className="flex items-center gap-3">
+                <div className="bg-gradient-hero p-2 rounded-xl">
+                  <Bot className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold">BRD Agent</h1>
+                  <p className="text-sm text-muted-foreground">Business Requirements Document Generator</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-xl font-bold">BRD Agent</h1>
-                <p className="text-sm text-muted-foreground">Business Requirements Document Generator</p>
-              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowRepository(true)}
+                className="gap-2"
+              >
+                <Archive className="h-4 w-4" />
+                Repository
+              </Button>
             </div>
           </div>
         </div>
@@ -695,6 +764,109 @@ This BRD serves as the foundation for the technical implementation and project e
                     <CheckCircle className="h-4 w-4" />
                     Confirm & Save
                   </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Repository Dialog */}
+          <Dialog open={showRepository} onOpenChange={setShowRepository}>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Archive className="h-5 w-5" />
+                  Document Repository
+                </DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-6">
+                {/* RFP Documents Section */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    RFP Documents
+                  </h3>
+                  <div className="grid gap-3">
+                    {repositoryRFPs.map((rfp) => (
+                      <Card key={rfp.id} className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium">{rfp.name}</h4>
+                            <p className="text-sm text-muted-foreground mt-1">{rfp.fileName}</p>
+                            <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(rfp.uploadedAt).toLocaleDateString()}
+                              </span>
+                              <span>{rfp.size}</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm" className="gap-1">
+                              <Download className="h-3 w-3" />
+                              Download
+                            </Button>
+                            <Button variant="outline" size="sm" className="gap-1">
+                              <FileText className="h-3 w-3" />
+                              View
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Generated BRDs Section */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5" />
+                    Generated BRDs
+                  </h3>
+                  <div className="grid gap-3">
+                    {repositoryBRDs.map((brd) => (
+                      <Card key={brd.id} className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-medium">{brd.name}</h4>
+                              <Badge 
+                                variant={brd.status === 'Final' ? 'default' : 'secondary'}
+                                className="text-xs"
+                              >
+                                {brd.status}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">{brd.projectName}</p>
+                            <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(brd.savedAt).toLocaleDateString()}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Hash className="h-3 w-3" />
+                                Version {brd.version}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm" className="gap-1">
+                              <Download className="h-3 w-3" />
+                              Export
+                            </Button>
+                            <Button variant="outline" size="sm" className="gap-1">
+                              <FileText className="h-3 w-3" />
+                              View
+                            </Button>
+                            <Button variant="outline" size="sm" className="gap-1">
+                              <Edit3 className="h-3 w-3" />
+                              Edit
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
               </div>
             </DialogContent>
