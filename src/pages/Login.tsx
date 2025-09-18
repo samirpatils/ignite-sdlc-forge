@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Bot, Zap, Lock, Mail, Github } from "lucide-react";
+import { Bot, Zap, Lock, Mail, Github, Code2, Settings, Workflow } from "lucide-react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -35,8 +35,34 @@ const Login = () => {
         {/* Logo and Branding */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center">
-            <div className="bg-gradient-hero p-3 rounded-2xl shadow-glow">
-              <Bot className="h-8 w-8 text-white" />
+            <div className="relative">
+              {/* Main logo container */}
+              <div className="bg-gradient-hero p-4 rounded-3xl shadow-glow relative overflow-hidden">
+                {/* Background pattern */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-3xl" />
+                
+                {/* Logo icon composition */}
+                <div className="relative flex items-center justify-center">
+                  <div className="relative">
+                    {/* Central workflow icon */}
+                    <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-2">
+                      <Workflow className="h-8 w-8 text-white" />
+                    </div>
+                    
+                    {/* Orbiting icons */}
+                    <div className="absolute -top-1 -right-1 bg-white/90 rounded-full p-1">
+                      <Code2 className="h-3 w-3 text-primary" />
+                    </div>
+                    <div className="absolute -bottom-1 -left-1 bg-white/90 rounded-full p-1">
+                      <Settings className="h-3 w-3 text-accent" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Decorative elements */}
+              <div className="absolute -top-2 -right-2 w-4 h-4 bg-accent/30 rounded-full blur-sm" />
+              <div className="absolute -bottom-2 -left-2 w-3 h-3 bg-primary/40 rounded-full blur-sm" />
             </div>
           </div>
           <div>
