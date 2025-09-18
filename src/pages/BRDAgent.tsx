@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Bot, 
   Upload, 
@@ -21,9 +23,14 @@ import {
   Download,
   Maximize2,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Package,
+  Plus,
+  Trash2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ModuleView } from "@/components/ModuleView";
+import { ModuleEditForm } from "@/components/ModuleEditForm";
 
 interface DocumentDetails {
   fileName: string;
@@ -37,6 +44,16 @@ interface DocumentDetails {
     budget: string;
     technicalRequirements: string[];
   };
+}
+
+interface FunctionalModule {
+  id: string;
+  name: string;
+  description: string;
+  requirements: string[];
+  priority: 'High' | 'Medium' | 'Low';
+  estimatedEffort: string;
+  dependencies: string[];
 }
 
 const BRDAgent = () => {
@@ -64,6 +81,55 @@ Please ensure the BRD is detailed, actionable, and follows industry best practic
   const [generatedBRD, setGeneratedBRD] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExtractedInfoOpen, setIsExtractedInfoOpen] = useState(true);
+  const [functionalModules, setFunctionalModules] = useState<FunctionalModule[]>([
+    {
+      id: '1',
+      name: 'User Authentication',
+      description: 'Complete user registration, login, and profile management system',
+      requirements: ['User registration', 'Login/Logout', 'Password reset', 'Profile management', 'Role-based access'],
+      priority: 'High',
+      estimatedEffort: '3-4 weeks',
+      dependencies: ['Database setup', 'Security framework']
+    },
+    {
+      id: '2',
+      name: 'Product Catalog',
+      description: 'Product listing, search, and categorization functionality',
+      requirements: ['Product listing', 'Search functionality', 'Category management', 'Product details view', 'Inventory tracking'],
+      priority: 'High',
+      estimatedEffort: '4-5 weeks',
+      dependencies: ['User Authentication', 'Admin Dashboard']
+    },
+    {
+      id: '3',
+      name: 'Shopping Cart',
+      description: 'Cart management and checkout process',
+      requirements: ['Add to cart', 'Cart management', 'Checkout process', 'Order summary', 'Cart persistence'],
+      priority: 'High',
+      estimatedEffort: '2-3 weeks',
+      dependencies: ['Product Catalog', 'User Authentication']
+    },
+    {
+      id: '4',
+      name: 'Payment Processing',
+      description: 'Secure payment gateway integration',
+      requirements: ['Payment gateway integration', 'Multiple payment methods', 'Transaction security', 'Payment history', 'Refund processing'],
+      priority: 'High',
+      estimatedEffort: '3-4 weeks',
+      dependencies: ['Shopping Cart', 'User Authentication']
+    },
+    {
+      id: '5',
+      name: 'Admin Dashboard',
+      description: 'Administrative interface for managing the platform',
+      requirements: ['User management', 'Product management', 'Order management', 'Analytics dashboard', 'System settings'],
+      priority: 'Medium',
+      estimatedEffort: '5-6 weeks',
+      dependencies: ['User Authentication']
+    }
+  ]);
+  const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
+  const [editingModule, setEditingModule] = useState<string | null>(null);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -170,6 +236,50 @@ This BRD serves as the foundation for the technical implementation and project e
         description: "Business Requirements Document has been created successfully",
       });
     }, 3000);
+  };
+
+  const toggleModuleExpansion = (moduleId: string) => {
+    setExpandedModules(prev => ({
+      ...prev,
+      [moduleId]: !prev[moduleId]
+    }));
+  };
+
+  const handleEditModule = (moduleId: string) => {
+    setEditingModule(moduleId);
+  };
+
+  const handleSaveModule = (moduleId: string, updatedModule: Partial<FunctionalModule>) => {
+    setFunctionalModules(prev => prev.map(module => 
+      module.id === moduleId ? { ...module, ...updatedModule } : module
+    ));
+    setEditingModule(null);
+    toast({
+      title: "Module Updated",
+      description: "Functional module has been updated successfully",
+    });
+  };
+
+  const handleDeleteModule = (moduleId: string) => {
+    setFunctionalModules(prev => prev.filter(module => module.id !== moduleId));
+    toast({
+      title: "Module Deleted",
+      description: "Functional module has been removed",
+    });
+  };
+
+  const addNewModule = () => {
+    const newModule: FunctionalModule = {
+      id: Date.now().toString(),
+      name: 'New Module',
+      description: 'Description for the new module',
+      requirements: ['New requirement'],
+      priority: 'Medium',
+      estimatedEffort: '1-2 weeks',
+      dependencies: []
+    };
+    setFunctionalModules(prev => [...prev, newModule]);
+    setEditingModule(newModule.id);
   };
 
   return (
@@ -432,6 +542,82 @@ This BRD serves as the foundation for the technical implementation and project e
                       {generatedBRD}
                     </pre>
                   </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Functional Modules Section */}
+            {generatedBRD && (
+              <Card className="bg-gradient-card shadow-soft border-0">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Package className="h-5 w-5" />
+                        Functional Modules
+                      </CardTitle>
+                      <CardDescription>
+                        Detailed breakdown of functional modules with requirements and dependencies
+                      </CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={addNewModule} className="gap-2">
+                      <Plus className="h-4 w-4" />
+                      Add Module
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {functionalModules.map((module) => (
+                    <Collapsible 
+                      key={module.id} 
+                      open={expandedModules[module.id]} 
+                      onOpenChange={() => toggleModuleExpansion(module.id)}
+                    >
+                      <div className="border border-border rounded-lg overflow-hidden">
+                        <CollapsibleTrigger asChild>
+                          <div className="flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors">
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-2">
+                                {expandedModules[module.id] ? (
+                                  <ChevronUp className="h-4 w-4" />
+                                ) : (
+                                  <ChevronDown className="h-4 w-4" />
+                                )}
+                                <h4 className="font-medium">{module.name}</h4>
+                              </div>
+                              <Badge 
+                                variant={module.priority === 'High' ? 'destructive' : 
+                                        module.priority === 'Medium' ? 'default' : 'secondary'}
+                                className="text-xs"
+                              >
+                                {module.priority}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-muted-foreground">{module.estimatedEffort}</span>
+                            </div>
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="p-4 space-y-4">
+                            {editingModule === module.id ? (
+                              <ModuleEditForm 
+                                module={module}
+                                onSave={(updatedModule) => handleSaveModule(module.id, updatedModule)}
+                                onCancel={() => setEditingModule(null)}
+                              />
+                            ) : (
+                              <ModuleView 
+                                module={module}
+                                onEdit={() => handleEditModule(module.id)}
+                                onDelete={() => handleDeleteModule(module.id)}
+                              />
+                            )}
+                          </div>
+                        </CollapsibleContent>
+                      </div>
+                    </Collapsible>
+                  ))}
                 </CardContent>
               </Card>
             )}
