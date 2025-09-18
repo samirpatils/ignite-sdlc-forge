@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { 
   ArrowLeft, 
   Search, 
@@ -14,7 +15,9 @@ import {
   Clock,
   FileText,
   Users,
-  Filter
+  Filter,
+  X,
+  Save
 } from "lucide-react";
 import {
   Select,
@@ -41,6 +44,9 @@ const Projects = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [isDetailView, setIsDetailView] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   
   // Mock data - would come from your database/state management
   const [projects] = useState<Project[]>([
@@ -91,6 +97,15 @@ const Projects = () => {
     }
   };
 
+  const getCardColor = (status: Project["status"]) => {
+    switch (status) {
+      case "Active": return "border-l-4 border-l-success bg-gradient-to-r from-success/5 to-transparent";
+      case "Draft": return "border-l-4 border-l-warning bg-gradient-to-r from-warning/5 to-transparent";
+      case "Completed": return "border-l-4 border-l-primary bg-gradient-to-r from-primary/5 to-transparent";
+      default: return "border-l-4 border-l-muted";
+    }
+  };
+
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          project.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -98,14 +113,26 @@ const Projects = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const handleView = (projectId: string) => {
-    console.log("Viewing project:", projectId);
-    // Navigate to project details view
+  const handleView = (project: Project) => {
+    setSelectedProject(project);
+    setIsDetailView(true);
+    setIsEditing(false);
   };
 
-  const handleEdit = (projectId: string) => {
-    console.log("Editing project:", projectId);
-    // Navigate to project edit page
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleSave = () => {
+    // Here you would save the changes to your database/state management
+    console.log("Saving project:", selectedProject);
+    setIsEditing(false);
+  };
+
+  const handleCloseDetail = () => {
+    setIsDetailView(false);
+    setSelectedProject(null);
+    setIsEditing(false);
   };
 
   return (
@@ -173,65 +200,31 @@ const Projects = () => {
         {/* Projects List */}
         <div className="space-y-4">
           {filteredProjects.map((project) => (
-            <Card key={project.id} className="bg-gradient-card shadow-soft border-0">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
+            <Card key={project.id} className={`bg-gradient-card shadow-soft border-0 ${getCardColor(project.status)}`}>
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-semibold text-foreground">{project.name}</h3>
+                      <h3 className="text-lg font-semibold text-foreground">{project.name}</h3>
                       <Badge className={getStatusColor(project.status)}>
                         {project.status}
                       </Badge>
                     </div>
-                    <p className="text-muted-foreground mb-4">{project.description}</p>
+                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{project.description}</p>
                     
-                    {/* Project Stats */}
-                    <div className="flex items-center gap-6 text-sm text-muted-foreground mb-4">
+                    {/* Minimal Project Stats */}
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
+                        <Clock className="h-3 w-3" />
                         {new Date(project.createdAt).toLocaleDateString()}
                       </div>
                       <div className="flex items-center gap-1">
-                        <FileText className="h-4 w-4" />
-                        {project.documentsCount} documents
+                        <FileText className="h-3 w-3" />
+                        {project.documentsCount} docs
                       </div>
                       <div className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
+                        <Users className="h-3 w-3" />
                         {project.teamMembers} members
-                      </div>
-                    </div>
-
-                    {/* Technology Stacks */}
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="font-medium text-foreground">Frontend:</span>
-                        <div className="flex gap-1 flex-wrap">
-                          {project.frontend.map((tech, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {tech.name} {tech.version}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="font-medium text-foreground">Middleware:</span>
-                        <div className="flex gap-1 flex-wrap">
-                          {project.middleware.map((tech, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {tech.name} {tech.version}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="font-medium text-foreground">Backend:</span>
-                        <div className="flex gap-1 flex-wrap">
-                          {project.backend.map((tech, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {tech.name} {tech.version}
-                            </Badge>
-                          ))}
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -241,20 +234,11 @@ const Projects = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleView(project.id)}
+                      onClick={() => handleView(project)}
                       className="gap-2"
                     >
                       <Eye className="h-4 w-4" />
                       View
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(project.id)}
-                      className="gap-2"
-                    >
-                      <Edit className="h-4 w-4" />
-                      Edit
                     </Button>
                   </div>
                 </div>
@@ -274,6 +258,115 @@ const Projects = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Project Detail Dialog */}
+        <Dialog open={isDetailView} onOpenChange={handleCloseDetail}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <div className="flex items-center justify-between">
+                <DialogTitle className="flex items-center gap-3">
+                  {selectedProject?.name}
+                  <Badge className={getStatusColor(selectedProject?.status || "Draft")}>
+                    {selectedProject?.status}
+                  </Badge>
+                </DialogTitle>
+                <div className="flex gap-2">
+                  {!isEditing ? (
+                    <Button variant="outline" size="sm" onClick={handleEdit} className="gap-2">
+                      <Edit className="h-4 w-4" />
+                      Edit
+                    </Button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
+                        Cancel
+                      </Button>
+                      <Button size="sm" onClick={handleSave} className="gap-2">
+                        <Save className="h-4 w-4" />
+                        Save
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </DialogHeader>
+            
+            {selectedProject && (
+              <div className="space-y-6 mt-4">
+                {/* Project Description */}
+                <div>
+                  <h4 className="font-semibold mb-2">Description</h4>
+                  {isEditing ? (
+                    <textarea 
+                      className="w-full p-3 border rounded-md resize-none"
+                      rows={3}
+                      value={selectedProject.description}
+                      onChange={(e) => setSelectedProject({...selectedProject, description: e.target.value})}
+                    />
+                  ) : (
+                    <p className="text-muted-foreground">{selectedProject.description}</p>
+                  )}
+                </div>
+
+                {/* Project Stats */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center p-4 bg-muted/10 rounded-lg">
+                    <div className="text-2xl font-bold text-foreground">{selectedProject.documentsCount}</div>
+                    <div className="text-sm text-muted-foreground">Documents</div>
+                  </div>
+                  <div className="text-center p-4 bg-muted/10 rounded-lg">
+                    <div className="text-2xl font-bold text-foreground">{selectedProject.teamMembers}</div>
+                    <div className="text-sm text-muted-foreground">Team Members</div>
+                  </div>
+                  <div className="text-center p-4 bg-muted/10 rounded-lg">
+                    <div className="text-2xl font-bold text-foreground">
+                      {new Date(selectedProject.createdAt).toLocaleDateString()}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Created</div>
+                  </div>
+                </div>
+
+                {/* Technology Stacks */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold">Technology Stack</h4>
+                  
+                  <div>
+                    <h5 className="font-medium text-sm mb-2 text-primary">Frontend Technologies</h5>
+                    <div className="flex gap-2 flex-wrap">
+                      {selectedProject.frontend.map((tech, index) => (
+                        <Badge key={index} variant="secondary" className="text-sm">
+                          {tech.name} {tech.version}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h5 className="font-medium text-sm mb-2 text-accent">Middleware Technologies</h5>
+                    <div className="flex gap-2 flex-wrap">
+                      {selectedProject.middleware.map((tech, index) => (
+                        <Badge key={index} variant="secondary" className="text-sm">
+                          {tech.name} {tech.version}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h5 className="font-medium text-sm mb-2 text-success">Backend Technologies</h5>
+                    <div className="flex gap-2 flex-wrap">
+                      {selectedProject.backend.map((tech, index) => (
+                        <Badge key={index} variant="secondary" className="text-sm">
+                          {tech.name} {tech.version}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
