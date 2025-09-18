@@ -17,7 +17,8 @@ import {
   Users,
   Filter,
   X,
-  Save
+  Save,
+  Package
 } from "lucide-react";
 import {
   Select,
@@ -231,6 +232,15 @@ const Projects = () => {
                   
                   {/* Action Buttons */}
                   <div className="flex gap-2 ml-4">
+                    <Button
+                      variant="hero"
+                      size="sm"
+                      onClick={() => navigate(`/project/${project.id}`)}
+                      className="gap-2"
+                    >
+                      <Package className="h-4 w-4" />
+                      Select Project
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"

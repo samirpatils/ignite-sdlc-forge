@@ -10,6 +10,7 @@ import BRDAgent from "./pages/BRDAgent";
 import Repository from "./pages/Repository";
 import NewProject from "./pages/NewProject";
 import Projects from "./pages/Projects";
+import ProjectInfo from "./pages/ProjectInfo";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/repository" element={<Repository />} />
           <Route path="/new-project" element={<NewProject />} />
           <Route path="/projects" element={<Projects />} />
+          <Route path="/project/:id" element={<ProjectInfo />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

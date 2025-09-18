@@ -230,14 +230,6 @@ const Dashboard = () => {
         {/* Projects Section */}
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-semibold">Recent Projects</h3>
-          <Button 
-            variant="hero" 
-            className="gap-2"
-            onClick={() => navigate("/new-project")}
-          >
-            <Plus className="h-4 w-4" />
-            New Project
-          </Button>
         </div>
 
         <div className="grid grid-cols-1 gap-4">

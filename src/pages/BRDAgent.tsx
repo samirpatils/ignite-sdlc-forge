@@ -143,6 +143,7 @@ Please ensure the BRD is detailed, actionable, and follows industry best practic
     projectName: string;
   }>>([]);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [thinkingStep, setThinkingStep] = useState("");
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -194,8 +195,32 @@ Please ensure the BRD is detailed, actionable, and follows industry best practic
   const handleGenerateBRD = () => {
     setIsGenerating(true);
     
+    // Simulate thinking process with animations
+    const thinkingSteps = [
+      "Analyzing uploaded document...",
+      "Extracting key requirements...", 
+      "Planning document structure...",
+      "Generating content sections...",
+      "Finalizing BRD document..."
+    ];
+    
+    let currentStep = 0;
+    setThinkingStep(thinkingSteps[currentStep]);
+    
+    const stepInterval = setInterval(() => {
+      currentStep++;
+      if (currentStep < thinkingSteps.length) {
+        setThinkingStep(thinkingSteps[currentStep]);
+      } else {
+        clearInterval(stepInterval);
+        setThinkingStep("");
+      }
+    }, 600);
+    
     // Simulate BRD generation
     setTimeout(() => {
+      clearInterval(stepInterval);
+      setThinkingStep("");
       setGeneratedBRD(`# Business Requirements Document
 ## E-Commerce Platform Modernization
 
@@ -439,7 +464,7 @@ This BRD serves as the foundation for the technical implementation and project e
                   {isGenerating ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Generating BRD...
+                      <span className="animate-pulse">{thinkingStep || "Generating BRD..."}</span>
                     </>
                   ) : (
                     <>
