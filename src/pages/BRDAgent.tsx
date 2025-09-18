@@ -130,6 +130,7 @@ Please ensure the BRD is detailed, actionable, and follows industry best practic
   ]);
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
   const [editingModule, setEditingModule] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<'extracted' | 'brd' | 'modules'>('extracted');
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -312,9 +313,9 @@ This BRD serves as the foundation for the technical implementation and project e
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Panel - Upload and Prompt */}
-          <div className="space-y-6">
+          <div className="lg:col-span-2 space-y-6">
             {/* File Upload */}
             <Card className="bg-gradient-card shadow-soft border-0">
               <CardHeader>
@@ -405,222 +406,258 @@ This BRD serves as the foundation for the technical implementation and project e
             </Card>
           </div>
 
-          {/* Right Panel - Document Details and Generated BRD */}
-          <div className="space-y-6">
-            {/* Document Details */}
-            {documentDetails && (
-              <Card className="bg-gradient-card shadow-soft border-0">
-                <Collapsible open={isExtractedInfoOpen} onOpenChange={setIsExtractedInfoOpen}>
-                  <CardHeader>
-                    <CollapsibleTrigger asChild>
-                      <div className="flex items-center justify-between w-full cursor-pointer group">
-                        <div>
-                          <CardTitle className="flex items-center gap-2">
-                            <FileText className="h-5 w-5" />
-                            Extracted Information
-                          </CardTitle>
-                          <CardDescription>
-                            Key details extracted from your RFP document
-                          </CardDescription>
-                        </div>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          {isExtractedInfoOpen ? (
-                            <ChevronUp className="h-4 w-4" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </CollapsibleTrigger>
-                  </CardHeader>
-                  <CollapsibleContent>
-                    <CardContent className="space-y-4 pt-0">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <Label className="text-muted-foreground">File Name</Label>
-                      <p className="font-medium">{documentDetails.fileName}</p>
-                    </div>
-                    <div>
-                      <Label className="text-muted-foreground">File Size</Label>
-                      <p className="font-medium">{documentDetails.fileSize}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div>
-                      <Label className="text-muted-foreground">Project Name</Label>
-                      <p className="font-medium">{documentDetails.extractedInfo.projectName}</p>
-                    </div>
-                    
-                    <div>
-                      <Label className="text-muted-foreground">Scope</Label>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {documentDetails.extractedInfo.scope.map((item, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {item}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <Label className="text-muted-foreground">Stakeholders</Label>
-                      <div className="space-y-1 mt-1">
-                        {documentDetails.extractedInfo.stakeholders.map((stakeholder, index) => (
-                          <p key={index} className="text-sm">{stakeholder}</p>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-muted-foreground">Timeline</Label>
-                        <p className="text-sm">{documentDetails.extractedInfo.timeline}</p>
-                      </div>
-                      <div>
-                        <Label className="text-muted-foreground">Budget</Label>
-                        <p className="text-sm">{documentDetails.extractedInfo.budget}</p>
-                      </div>
-                      </div>
-                    </div>
-                    </CardContent>
-                  </CollapsibleContent>
-                </Collapsible>
-              </Card>
-            )}
+          {/* Right Panel - Navigation and Content */}
+          <div className="lg:col-span-1">
+            {/* Vertical Navigation */}
+            <div className="sticky top-8 space-y-4">
+              <div className="flex lg:flex-col gap-2">
+                <Button
+                  variant={activeSection === 'extracted' ? 'hero' : 'outline'}
+                  size="sm"
+                  onClick={() => setActiveSection('extracted')}
+                  disabled={!documentDetails}
+                  className="flex-1 lg:w-full gap-2 justify-start"
+                >
+                  <FileText className="h-4 w-4" />
+                  Extracted Info
+                </Button>
+                <Button
+                  variant={activeSection === 'brd' ? 'hero' : 'outline'}
+                  size="sm"
+                  onClick={() => setActiveSection('brd')}
+                  disabled={!generatedBRD}
+                  className="flex-1 lg:w-full gap-2 justify-start"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  Generated BRD
+                </Button>
+                <Button
+                  variant={activeSection === 'modules' ? 'hero' : 'outline'}
+                  size="sm"
+                  onClick={() => setActiveSection('modules')}
+                  disabled={!generatedBRD}
+                  className="flex-1 lg:w-full gap-2 justify-start"
+                >
+                  <Package className="h-4 w-4" />
+                  Modules
+                </Button>
+              </div>
 
-            {/* Generated BRD */}
-            {generatedBRD && (
-              <Card className="bg-gradient-card shadow-soft border-0">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <CheckCircle className="h-5 w-5 text-success" />
-                        Generated BRD
-                      </CardTitle>
-                      <CardDescription>
-                        Review and save your Business Requirements Document
-                      </CardDescription>
-                    </div>
-                    <div className="flex gap-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm" className="gap-2">
-                            <Maximize2 className="h-4 w-4" />
-                            Full Screen
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-5xl w-[95vw] h-[90vh] flex flex-col">
-                          <DialogHeader>
-                            <DialogTitle className="flex items-center gap-2">
-                              <CheckCircle className="h-5 w-5 text-success" />
-                              Business Requirements Document - Full Screen View
-                            </DialogTitle>
-                          </DialogHeader>
-                          <div className="flex-1 bg-muted/30 rounded-lg p-6 overflow-y-auto">
-                            <pre className="whitespace-pre-wrap text-sm font-mono leading-relaxed">
-                              {generatedBRD}
-                            </pre>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                      <Button variant="outline" size="sm" className="gap-2">
-                        <Download className="h-4 w-4" />
-                        Download
-                      </Button>
-                      <Button variant="hero" size="sm" className="gap-2">
-                        <Save className="h-4 w-4" />
-                        Save to Repository
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="bg-muted/30 rounded-lg p-4 max-h-96 overflow-y-auto">
-                    <pre className="whitespace-pre-wrap text-sm font-mono">
-                      {generatedBRD}
-                    </pre>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Functional Modules Section */}
-            {generatedBRD && (
-              <Card className="bg-gradient-card shadow-soft border-0">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <Package className="h-5 w-5" />
-                        Functional Modules
-                      </CardTitle>
-                      <CardDescription>
-                        Detailed breakdown of functional modules with requirements and dependencies
-                      </CardDescription>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={addNewModule} className="gap-2">
-                      <Plus className="h-4 w-4" />
-                      Add Module
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {functionalModules.map((module) => (
-                    <Collapsible 
-                      key={module.id} 
-                      open={expandedModules[module.id]} 
-                      onOpenChange={() => toggleModuleExpansion(module.id)}
-                    >
-                      <div className="border border-border rounded-lg overflow-hidden">
+              {/* Active Section Content */}
+              <div className="min-h-[500px]">
+                {/* Document Details */}
+                {activeSection === 'extracted' && documentDetails && (
+                  <Card className="bg-gradient-card shadow-soft border-0">
+                    <Collapsible open={isExtractedInfoOpen} onOpenChange={setIsExtractedInfoOpen}>
+                      <CardHeader>
                         <CollapsibleTrigger asChild>
-                          <div className="flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors">
-                            <div className="flex items-center gap-3">
-                              <div className="flex items-center gap-2">
-                                {expandedModules[module.id] ? (
-                                  <ChevronUp className="h-4 w-4" />
-                                ) : (
-                                  <ChevronDown className="h-4 w-4" />
-                                )}
-                                <h4 className="font-medium">{module.name}</h4>
-                              </div>
-                              <Badge 
-                                variant={module.priority === 'High' ? 'destructive' : 
-                                        module.priority === 'Medium' ? 'default' : 'secondary'}
-                                className="text-xs"
-                              >
-                                {module.priority}
-                              </Badge>
+                          <div className="flex items-center justify-between w-full cursor-pointer group">
+                            <div>
+                              <CardTitle className="flex items-center gap-2">
+                                <FileText className="h-5 w-5" />
+                                Extracted Information
+                              </CardTitle>
+                              <CardDescription>
+                                Key details extracted from your RFP document
+                              </CardDescription>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-muted-foreground">{module.estimatedEffort}</span>
-                            </div>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              {isExtractedInfoOpen ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                            </Button>
                           </div>
                         </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <div className="p-4 space-y-4">
-                            {editingModule === module.id ? (
-                              <ModuleEditForm 
-                                module={module}
-                                onSave={(updatedModule) => handleSaveModule(module.id, updatedModule)}
-                                onCancel={() => setEditingModule(null)}
-                              />
-                            ) : (
-                              <ModuleView 
-                                module={module}
-                                onEdit={() => handleEditModule(module.id)}
-                                onDelete={() => handleDeleteModule(module.id)}
-                              />
-                            )}
+                      </CardHeader>
+                      <CollapsibleContent>
+                        <CardContent className="space-y-4 pt-0">
+                          <div className="grid grid-cols-1 gap-4 text-sm">
+                            <div>
+                              <Label className="text-muted-foreground">File Name</Label>
+                              <p className="font-medium">{documentDetails.fileName}</p>
+                            </div>
+                            <div>
+                              <Label className="text-muted-foreground">File Size</Label>
+                              <p className="font-medium">{documentDetails.fileSize}</p>
+                            </div>
                           </div>
-                        </CollapsibleContent>
-                      </div>
+                          
+                          <div className="space-y-3">
+                            <div>
+                              <Label className="text-muted-foreground">Project Name</Label>
+                              <p className="font-medium">{documentDetails.extractedInfo.projectName}</p>
+                            </div>
+                            
+                            <div>
+                              <Label className="text-muted-foreground">Scope</Label>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {documentDetails.extractedInfo.scope.map((item, index) => (
+                                  <Badge key={index} variant="secondary" className="text-xs">
+                                    {item}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <Label className="text-muted-foreground">Stakeholders</Label>
+                              <div className="space-y-1 mt-1">
+                                {documentDetails.extractedInfo.stakeholders.map((stakeholder, index) => (
+                                  <p key={index} className="text-sm">{stakeholder}</p>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 gap-4">
+                              <div>
+                                <Label className="text-muted-foreground">Timeline</Label>
+                                <p className="text-sm">{documentDetails.extractedInfo.timeline}</p>
+                              </div>
+                              <div>
+                                <Label className="text-muted-foreground">Budget</Label>
+                                <p className="text-sm">{documentDetails.extractedInfo.budget}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </CollapsibleContent>
                     </Collapsible>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
+                  </Card>
+                )}
+
+                {/* Generated BRD */}
+                {activeSection === 'brd' && generatedBRD && (
+                  <Card className="bg-gradient-card shadow-soft border-0">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            <CheckCircle className="h-5 w-5 text-success" />
+                            Generated BRD
+                          </CardTitle>
+                          <CardDescription>
+                            Review and save your Business Requirements Document
+                          </CardDescription>
+                        </div>
+                        <div className="flex gap-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm" className="gap-2">
+                                <Maximize2 className="h-4 w-4" />
+                                Full Screen
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-5xl w-[95vw] h-[90vh] flex flex-col">
+                              <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2">
+                                  <CheckCircle className="h-5 w-5 text-success" />
+                                  Business Requirements Document - Full Screen View
+                                </DialogTitle>
+                              </DialogHeader>
+                              <div className="flex-1 bg-muted/30 rounded-lg p-6 overflow-y-auto">
+                                <pre className="whitespace-pre-wrap text-sm font-mono leading-relaxed">
+                                  {generatedBRD}
+                                </pre>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                          <Button variant="outline" size="sm" className="gap-2">
+                            <Download className="h-4 w-4" />
+                            Download
+                          </Button>
+                          <Button variant="hero" size="sm" className="gap-2">
+                            <Save className="h-4 w-4" />
+                            Save
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="bg-muted/30 rounded-lg p-4 max-h-96 overflow-y-auto">
+                        <pre className="whitespace-pre-wrap text-sm font-mono">
+                          {generatedBRD}
+                        </pre>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Functional Modules Section */}
+                {activeSection === 'modules' && generatedBRD && (
+                  <Card className="bg-gradient-card shadow-soft border-0">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            <Package className="h-5 w-5" />
+                            Functional Modules
+                          </CardTitle>
+                          <CardDescription>
+                            Detailed breakdown of functional modules
+                          </CardDescription>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={addNewModule} className="gap-2">
+                          <Plus className="h-4 w-4" />
+                          Add Module
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {functionalModules.map((module) => (
+                        <Collapsible 
+                          key={module.id} 
+                          open={expandedModules[module.id]} 
+                          onOpenChange={() => toggleModuleExpansion(module.id)}
+                        >
+                          <div className="border border-border rounded-lg overflow-hidden">
+                            <CollapsibleTrigger asChild>
+                              <div className="flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors">
+                                <div className="flex items-center gap-3">
+                                  <div className="flex items-center gap-2">
+                                    {expandedModules[module.id] ? (
+                                      <ChevronUp className="h-4 w-4" />
+                                    ) : (
+                                      <ChevronDown className="h-4 w-4" />
+                                    )}
+                                    <h4 className="font-medium text-sm">{module.name}</h4>
+                                  </div>
+                                  <Badge 
+                                    variant={module.priority === 'High' ? 'destructive' : 
+                                            module.priority === 'Medium' ? 'default' : 'secondary'}
+                                    className="text-xs"
+                                  >
+                                    {module.priority}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <div className="p-4 space-y-4">
+                                {editingModule === module.id ? (
+                                  <ModuleEditForm 
+                                    module={module}
+                                    onSave={(updatedModule) => handleSaveModule(module.id, updatedModule)}
+                                    onCancel={() => setEditingModule(null)}
+                                  />
+                                ) : (
+                                  <ModuleView 
+                                    module={module}
+                                    onEdit={() => handleEditModule(module.id)}
+                                    onDelete={() => handleDeleteModule(module.id)}
+                                  />
+                                )}
+                              </div>
+                            </CollapsibleContent>
+                          </div>
+                        </Collapsible>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
