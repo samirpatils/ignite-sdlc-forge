@@ -201,14 +201,30 @@ const ProjectInfo = () => {
                 </Badge>
               </div>
             </div>
-            <Button 
-              variant="hero"
-              onClick={() => navigate("/brd-agent", { state: { projectId: project.id, projectName: project.name } })}
-              className="gap-2"
-            >
-              <Bot className="h-4 w-4" />
-              Start BRD Agent
-            </Button>
+            <div className="flex gap-3">
+              <Button 
+                variant="hero"
+                onClick={() => navigate("/brd-agent", { state: { projectId: project.id, projectName: project.name } })}
+                className="gap-2"
+              >
+                <Bot className="h-4 w-4" />
+                BRD Agent
+              </Button>
+              <Button 
+                variant="outline"
+                className="gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                Tech Docs Agent
+              </Button>
+              <Button 
+                variant="outline"
+                className="gap-2"
+              >
+                <Code className="h-4 w-4" />
+                Code Agent
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -349,38 +365,56 @@ const ProjectInfo = () => {
               </CardContent>
             </Card>
 
-            {/* Quick Actions */}
+            {/* AI Agents */}
             <Card className="bg-gradient-card shadow-soft border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  Quick Actions
+                  <Bot className="h-5 w-5" />
+                  AI Agents
                 </CardTitle>
+                <CardDescription>
+                  Select an AI agent to assist with your project requirements
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <Button 
                     variant="outline" 
-                    className="w-full justify-between gap-2"
+                    className="w-full justify-between gap-2 h-12"
                     onClick={() => navigate("/brd-agent", { state: { projectId: project.id, projectName: project.name } })}
                   >
-                    <div className="flex items-center gap-2">
-                      <Bot className="h-4 w-4" />
-                      BRD Agent
+                    <div className="flex items-center gap-3">
+                      <div className="bg-primary/10 p-2 rounded-lg">
+                        <Bot className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="text-left">
+                        <div className="font-medium">BRD Agent</div>
+                        <div className="text-xs text-muted-foreground">Generate Business Requirements</div>
+                      </div>
                     </div>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" className="w-full justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      Documentation
+                  <Button variant="outline" className="w-full justify-between gap-2 h-12">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-accent/10 p-2 rounded-lg">
+                        <FileText className="h-4 w-4 text-accent" />
+                      </div>
+                      <div className="text-left">
+                        <div className="font-medium">Technical Documentation Agent</div>
+                        <div className="text-xs text-muted-foreground">Create technical specifications</div>
+                      </div>
                     </div>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" className="w-full justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <Code className="h-4 w-4" />
-                      Code Generation
+                  <Button variant="outline" className="w-full justify-between gap-2 h-12">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-success/10 p-2 rounded-lg">
+                        <Code className="h-4 w-4 text-success" />
+                      </div>
+                      <div className="text-left">
+                        <div className="font-medium">Code Agent</div>
+                        <div className="text-xs text-muted-foreground">Generate and review code</div>
+                      </div>
                     </div>
                     <ChevronRight className="h-4 w-4" />
                   </Button>

@@ -179,7 +179,7 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card 
               className="bg-gradient-card shadow-soft border-0 cursor-pointer hover:shadow-medium transition-shadow"
-              onClick={() => navigate("/brd-agent")}
+              onClick={() => navigate("/projects")}
             >
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -195,7 +195,10 @@ const Dashboard = () => {
               </CardHeader>
             </Card>
 
-            <Card className="bg-gradient-card shadow-soft border-0 cursor-pointer hover:shadow-medium transition-shadow">
+            <Card 
+              className="bg-gradient-card shadow-soft border-0 cursor-pointer hover:shadow-medium transition-shadow"
+              onClick={() => navigate("/projects")}
+            >
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="bg-accent/10 p-3 rounded-xl">
@@ -210,7 +213,10 @@ const Dashboard = () => {
               </CardHeader>
             </Card>
 
-            <Card className="bg-gradient-card shadow-soft border-0 cursor-pointer hover:shadow-medium transition-shadow">
+            <Card 
+              className="bg-gradient-card shadow-soft border-0 cursor-pointer hover:shadow-medium transition-shadow"
+              onClick={() => navigate("/projects")}
+            >
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="bg-success/10 p-3 rounded-xl">
