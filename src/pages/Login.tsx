@@ -198,30 +198,6 @@ const Login = () => {
             </form>
           </CardContent>
         </Card>
-
-        {/* Features Preview */}
-        <div className="text-center space-y-4">
-          <div className="grid grid-cols-3 gap-4 text-xs">
-            <div className="flex flex-col items-center gap-1">
-              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Bot className="h-4 w-4 text-primary" />
-              </div>
-              <span className="text-muted-foreground">BRD Agent</span>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center">
-                <Zap className="h-4 w-4 text-accent" />
-              </div>
-              <span className="text-muted-foreground">Tech Docs</span>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <div className="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center">
-                <Lock className="h-4 w-4 text-success" />
-              </div>
-              <span className="text-muted-foreground">Code Agent</span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
