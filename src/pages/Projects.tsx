@@ -18,7 +18,7 @@ import {
   Filter,
   X,
   Save,
-  Package
+  FolderOpen
 } from "lucide-react";
 import {
   Select,
@@ -238,7 +238,7 @@ const Projects = () => {
                       onClick={() => navigate(`/project/${project.id}`)}
                       className="gap-2"
                     >
-                      <Package className="h-4 w-4" />
+                      <FolderOpen className="h-4 w-4" />
                       Select Project
                     </Button>
                     <Button
