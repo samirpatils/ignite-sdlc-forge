@@ -17,7 +17,8 @@ import {
   Bot,
   FolderTree,
   FileCode,
-  Clock
+  Clock,
+  Download
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -132,7 +133,7 @@ const CodeAgent = () => {
     return structures[category as keyof typeof structures] || {};
   };
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (category: string) => {
     if (!prompt.trim()) return;
 
     setIsGenerating(true);
@@ -153,18 +154,18 @@ const CodeAgent = () => {
       await new Promise(resolve => setTimeout(resolve, 1200));
     }
 
-    // Generate folder structure based on active tab
-    const structure = generateFolderStructure(activeTab);
+    // Generate folder structure based on category
+    const structure = generateFolderStructure(category);
     
     // Add some generated code files based on prompt
     const generatedFiles = {
-      [`src/components/Generated${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}.tsx`]: 
+      [`src/components/Generated${category.charAt(0).toUpperCase() + category.slice(1)}.tsx`]: 
         `// Generated based on prompt: "${prompt}"\n\n` +
-        `export const Generated${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} = () => {\n` +
+        `export const Generated${category.charAt(0).toUpperCase() + category.slice(1)} = () => {\n` +
         `  // TODO: Implement functionality based on requirements\n` +
         `  return (\n    <div>\n      {/* Generated component */}\n    </div>\n  );\n};\n`,
-      [`src/utils/generated-${activeTab}.ts`]: 
-        `// Utility functions for ${activeTab}\n\n` +
+      [`src/utils/generated-${category}.ts`]: 
+        `// Utility functions for ${category}\n\n` +
         `export const generateHelper = () => {\n` +
         `  // TODO: Implement helper functions\n};\n`
     };
@@ -173,7 +174,7 @@ const CodeAgent = () => {
 
     setFolderStructure(prev => ({
       ...prev,
-      [activeTab]: finalStructure
+      [category]: finalStructure
     }));
 
     setIsGenerating(false);
@@ -181,7 +182,48 @@ const CodeAgent = () => {
     
     toast({
       title: "Code Structure Generated",
-      description: `${codeCategories.find(c => c.id === activeTab)?.title} structure has been created.`,
+      description: `${codeCategories.find(c => c.id === category)?.title} structure has been created.`,
+    });
+  };
+
+  const handleDownload = (category: string) => {
+    const structure = folderStructure[category as keyof CodeStructure];
+    if (!structure || Object.keys(structure).length === 0) {
+      toast({
+        title: "No Structure to Download",
+        description: "Generate a code structure first before downloading.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Create a text representation of the folder structure
+    let content = `# ${codeCategories.find(c => c.id === category)?.title} Structure\n\n`;
+    content += `Generated on: ${new Date().toLocaleString()}\n`;
+    content += `Project: ${state?.projectName || 'Unnamed Project'}\n\n`;
+    content += `## Folder Structure\n\n`;
+    
+    Object.entries(structure).forEach(([path, fileContent]) => {
+      content += `${path}\n`;
+      if (fileContent && !path.endsWith('/')) {
+        content += `\`\`\`\n${fileContent}\n\`\`\`\n\n`;
+      }
+    });
+
+    // Create and download file
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${category}-structure.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Download Started",
+      description: `${category.charAt(0).toUpperCase() + category.slice(1)} structure downloaded successfully.`,
     });
   };
 
@@ -241,53 +283,16 @@ const CodeAgent = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
-          {/* Code Generation Interface */}
-          <Card className="bg-gradient-card shadow-soft border-0">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bot className="h-5 w-5" />
-                Code Generation Agent
-              </CardTitle>
-              <CardDescription>
-                Generate application folder structure and boilerplate code for your project
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Textarea
-                placeholder="Describe the code structure and functionality you want to generate..."
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                className="min-h-24"
-              />
-
-              {isGenerating && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="h-4 w-4 animate-spin" />
-                    {currentStep}
-                  </div>
-                  <Progress value={progress} className="w-full" />
-                </div>
-              )}
-
-              <Button 
-                onClick={handleGenerate}
-                disabled={!prompt.trim() || isGenerating}
-                className="gap-2"
-              >
-                <Send className="h-4 w-4" />
-                {isGenerating ? "Generating..." : "Generate Code Structure"}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Code Tabs */}
+          {/* Application Structure with Code Generation */}
           <Card className="bg-gradient-card shadow-soft border-0">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FolderTree className="h-5 w-5" />
                 Application Structure
               </CardTitle>
+              <CardDescription>
+                Generate and manage your application's folder structure and boilerplate code
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -308,38 +313,7 @@ const CodeAgent = () => {
                 </TabsList>
 
                 {codeCategories.map((category) => (
-                  <TabsContent key={category.id} value={category.id} className="space-y-4">
-                    {/* Quick Prompts for each category */}
-                    <div className="space-y-3">
-                      <h4 className="font-medium text-foreground">Quick Prompts:</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {category.prompts.map((quickPrompt, index) => (
-                          <Button
-                            key={index}
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setPrompt(quickPrompt)}
-                            className="text-xs"
-                          >
-                            {quickPrompt}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Generated Structure */}
-                    {folderStructure[category.id as keyof CodeStructure] && 
-                     Object.keys(folderStructure[category.id as keyof CodeStructure]).length > 0 && (
-                      <Card className="bg-muted/10">
-                        <CardHeader>
-                          <CardTitle className="text-base">Generated {category.title} Structure</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          {renderFileTree(folderStructure[category.id as keyof CodeStructure])}
-                        </CardContent>
-                      </Card>
-                    )}
-
+                  <TabsContent key={category.id} value={category.id} className="space-y-6 mt-6">
                     {/* Category Description */}
                     <Card className="bg-muted/5">
                       <CardContent className="p-6">
@@ -354,6 +328,102 @@ const CodeAgent = () => {
                         </div>
                       </CardContent>
                     </Card>
+
+                    {/* Code Generation Interface for this category */}
+                    <Card className="bg-gradient-card shadow-soft border-0">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Bot className="h-5 w-5" />
+                          Generate {category.title}
+                        </CardTitle>
+                        <CardDescription>
+                          Describe your requirements to generate {category.title.toLowerCase()} structure and code
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {/* Quick Prompts for each category */}
+                        <div className="space-y-3">
+                          <h4 className="font-medium text-foreground">Quick Prompts:</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {category.prompts.map((quickPrompt, index) => (
+                              <Button
+                                key={index}
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPrompt(quickPrompt)}
+                                className="text-xs"
+                              >
+                                {quickPrompt}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <Textarea
+                          placeholder={`Describe the ${category.title.toLowerCase()} structure and functionality you want to generate...`}
+                          value={prompt}
+                          onChange={(e) => setPrompt(e.target.value)}
+                          className="min-h-24"
+                        />
+
+                        {isGenerating && activeTab === category.id && (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Clock className="h-4 w-4 animate-spin" />
+                              {currentStep}
+                            </div>
+                            <Progress value={progress} className="w-full" />
+                          </div>
+                        )}
+
+                        <div className="flex gap-3">
+                          <Button 
+                            onClick={() => handleGenerate(category.id)}
+                            disabled={!prompt.trim() || (isGenerating && activeTab === category.id)}
+                            className="gap-2"
+                          >
+                            <Send className="h-4 w-4" />
+                            {(isGenerating && activeTab === category.id) ? "Generating..." : `Generate ${category.title}`}
+                          </Button>
+                          
+                          {folderStructure[category.id as keyof CodeStructure] && 
+                           Object.keys(folderStructure[category.id as keyof CodeStructure]).length > 0 && (
+                            <Button 
+                              variant="outline"
+                              onClick={() => handleDownload(category.id)}
+                              className="gap-2"
+                            >
+                              <Download className="h-4 w-4" />
+                              Download Structure
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Generated Structure */}
+                    {folderStructure[category.id as keyof CodeStructure] && 
+                     Object.keys(folderStructure[category.id as keyof CodeStructure]).length > 0 && (
+                      <Card className="bg-muted/10">
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-base">Generated {category.title} Structure</CardTitle>
+                            <Button 
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDownload(category.id)}
+                              className="gap-2"
+                            >
+                              <Download className="h-4 w-4" />
+                              Download
+                            </Button>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          {renderFileTree(folderStructure[category.id as keyof CodeStructure])}
+                        </CardContent>
+                      </Card>
+                    )}
                   </TabsContent>
                 ))}
               </Tabs>
