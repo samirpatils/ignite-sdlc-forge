@@ -212,6 +212,7 @@ const ProjectInfo = () => {
               </Button>
               <Button 
                 variant="outline"
+                onClick={() => navigate("/tech-docs-agent", { state: { projectId: project.id, projectName: project.name } })}
                 className="gap-2"
               >
                 <FileText className="h-4 w-4" />
@@ -219,6 +220,7 @@ const ProjectInfo = () => {
               </Button>
               <Button 
                 variant="outline"
+                onClick={() => navigate("/code-agent", { state: { projectId: project.id, projectName: project.name } })}
                 className="gap-2"
               >
                 <Code className="h-4 w-4" />
@@ -394,7 +396,11 @@ const ProjectInfo = () => {
                     </div>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" className="w-full justify-between gap-2 h-12">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-between gap-2 h-12"
+                    onClick={() => navigate("/tech-docs-agent", { state: { projectId: project.id, projectName: project.name } })}
+                  >
                     <div className="flex items-center gap-3">
                       <div className="bg-accent/10 p-2 rounded-lg">
                         <FileText className="h-4 w-4 text-accent" />
@@ -406,7 +412,11 @@ const ProjectInfo = () => {
                     </div>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" className="w-full justify-between gap-2 h-12">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-between gap-2 h-12"
+                    onClick={() => navigate("/code-agent", { state: { projectId: project.id, projectName: project.name } })}
+                  >
                     <div className="flex items-center gap-3">
                       <div className="bg-success/10 p-2 rounded-lg">
                         <Code className="h-4 w-4 text-success" />
