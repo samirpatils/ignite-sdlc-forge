@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Bot, 
   Upload, 
@@ -16,7 +17,8 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
-  Download
+  Download,
+  Maximize2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -371,6 +373,27 @@ This BRD serves as the foundation for the technical implementation and project e
                       </CardDescription>
                     </div>
                     <div className="flex gap-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="gap-2">
+                            <Maximize2 className="h-4 w-4" />
+                            Full Screen
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-5xl w-[95vw] h-[90vh] flex flex-col">
+                          <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                              <CheckCircle className="h-5 w-5 text-success" />
+                              Business Requirements Document - Full Screen View
+                            </DialogTitle>
+                          </DialogHeader>
+                          <div className="flex-1 bg-muted/30 rounded-lg p-6 overflow-y-auto">
+                            <pre className="whitespace-pre-wrap text-sm font-mono leading-relaxed">
+                              {generatedBRD}
+                            </pre>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
                       <Button variant="outline" size="sm" className="gap-2">
                         <Download className="h-4 w-4" />
                         Download
