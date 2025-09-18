@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   Bot, 
   Upload, 
@@ -18,7 +19,9 @@ import {
   Clock,
   AlertCircle,
   Download,
-  Maximize2
+  Maximize2,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -60,6 +63,7 @@ Please ensure the BRD is detailed, actionable, and follows industry best practic
   );
   const [generatedBRD, setGeneratedBRD] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isExtractedInfoOpen, setIsExtractedInfoOpen] = useState(true);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -296,16 +300,31 @@ This BRD serves as the foundation for the technical implementation and project e
             {/* Document Details */}
             {documentDetails && (
               <Card className="bg-gradient-card shadow-soft border-0">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Extracted Information
-                  </CardTitle>
-                  <CardDescription>
-                    Key details extracted from your RFP document
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
+                <Collapsible open={isExtractedInfoOpen} onOpenChange={setIsExtractedInfoOpen}>
+                  <CardHeader>
+                    <CollapsibleTrigger asChild>
+                      <div className="flex items-center justify-between w-full cursor-pointer group">
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            <FileText className="h-5 w-5" />
+                            Extracted Information
+                          </CardTitle>
+                          <CardDescription>
+                            Key details extracted from your RFP document
+                          </CardDescription>
+                        </div>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          {isExtractedInfoOpen ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </CollapsibleTrigger>
+                  </CardHeader>
+                  <CollapsibleContent>
+                    <CardContent className="space-y-4 pt-0">
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <Label className="text-muted-foreground">File Name</Label>
@@ -352,9 +371,11 @@ This BRD serves as the foundation for the technical implementation and project e
                         <Label className="text-muted-foreground">Budget</Label>
                         <p className="text-sm">{documentDetails.extractedInfo.budget}</p>
                       </div>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
+                    </CardContent>
+                  </CollapsibleContent>
+                </Collapsible>
               </Card>
             )}
 
