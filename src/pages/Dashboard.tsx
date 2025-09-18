@@ -115,7 +115,10 @@ const Dashboard = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-gradient-card shadow-soft border-0">
+          <Card 
+            className="bg-gradient-card shadow-soft border-0 cursor-pointer hover:shadow-medium transition-shadow"
+            onClick={() => navigate("/projects")}
+          >
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -227,7 +230,11 @@ const Dashboard = () => {
         {/* Projects Section */}
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-semibold">Recent Projects</h3>
-          <Button variant="hero" className="gap-2">
+          <Button 
+            variant="hero" 
+            className="gap-2"
+            onClick={() => navigate("/new-project")}
+          >
             <Plus className="h-4 w-4" />
             New Project
           </Button>
