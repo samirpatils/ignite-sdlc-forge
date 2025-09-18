@@ -513,7 +513,7 @@ This document provides the high-level architecture for the E-Commerce platform m
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-3 lg:grid-cols-2 gap-6">
           {/* RFP Documents Section */}
           <Card className="bg-gradient-card shadow-soft border-0">
             <CardHeader>
@@ -529,11 +529,11 @@ This document provides the high-level architecture for the E-Commerce platform m
               <div className="space-y-4">
                 {repositoryRFPs.map((rfp) => (
                   <Card key={rfp.id} className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-medium">{rfp.name}</h4>
-                        <p className="text-sm text-muted-foreground mt-1">{rfp.fileName}</p>
-                        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="font-medium text-sm leading-tight">{rfp.name}</h4>
+                        <p className="text-xs text-muted-foreground mt-1">{rfp.fileName}</p>
+                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             {new Date(rfp.uploadedAt).toLocaleDateString()}
@@ -541,11 +541,11 @@ This document provides the high-level architecture for the E-Commerce platform m
                           <span>{rfp.size}</span>
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 pt-2">
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="gap-1"
+                          className="gap-1 text-xs h-8 flex-1"
                           onClick={() => handleDownload(rfp, 'rfp')}
                         >
                           <Download className="h-3 w-3" />
@@ -554,7 +554,7 @@ This document provides the high-level architecture for the E-Commerce platform m
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="gap-1"
+                          className="gap-1 text-xs h-8 flex-1"
                           onClick={() => handleViewDocument('rfp', rfp)}
                         >
                           <Eye className="h-3 w-3" />
@@ -583,34 +583,34 @@ This document provides the high-level architecture for the E-Commerce platform m
               <div className="space-y-4">
                 {repositoryBRDs.map((brd) => (
                   <Card key={brd.id} className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-medium">{brd.name}</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="flex items-start gap-2 mb-2">
+                          <h4 className="font-medium text-sm leading-tight flex-1">{brd.name}</h4>
                           <Badge 
                             variant={brd.status === 'Final' ? 'default' : 'secondary'}
-                            className="text-xs"
+                            className="text-xs shrink-0"
                           >
                             {brd.status}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">{brd.projectName}</p>
-                        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">{brd.projectName}</p>
+                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             {new Date(brd.savedAt).toLocaleDateString()}
                           </span>
                           <span className="flex items-center gap-1">
                             <Hash className="h-3 w-3" />
-                            Version {brd.version}
+                            v{brd.version}
                           </span>
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="grid grid-cols-3 gap-2 pt-2">
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="gap-1"
+                          className="gap-1 text-xs h-8"
                           onClick={() => handleDownload(brd, 'brd')}
                         >
                           <Download className="h-3 w-3" />
@@ -619,7 +619,7 @@ This document provides the high-level architecture for the E-Commerce platform m
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="gap-1"
+                          className="gap-1 text-xs h-8"
                           onClick={() => handleViewDocument('brd', brd)}
                         >
                           <Eye className="h-3 w-3" />
@@ -628,7 +628,7 @@ This document provides the high-level architecture for the E-Commerce platform m
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="gap-1"
+                          className="gap-1 text-xs h-8"
                           onClick={() => handleEditBRD(brd)}
                         >
                           <Edit3 className="h-3 w-3" />
@@ -657,40 +657,42 @@ This document provides the high-level architecture for the E-Commerce platform m
               <div className="space-y-4">
                 {repositoryTechDocs.map((doc) => (
                   <Card key={doc.id} className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-medium">{doc.name}</h4>
-                          <Badge 
-                            variant={doc.type === 'HLD' ? 'default' : doc.type === 'LLD' ? 'secondary' : 'outline'}
-                            className="text-xs"
-                          >
-                            {doc.type}
-                          </Badge>
-                          <Badge 
-                            variant={doc.status === 'Final' ? 'default' : 'secondary'}
-                            className="text-xs"
-                          >
-                            {doc.status}
-                          </Badge>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="flex items-start gap-2 mb-2">
+                          <h4 className="font-medium text-sm leading-tight flex-1">{doc.name}</h4>
+                          <div className="flex gap-1 shrink-0">
+                            <Badge 
+                              variant={doc.type === 'HLD' ? 'default' : doc.type === 'LLD' ? 'secondary' : 'outline'}
+                              className="text-xs"
+                            >
+                              {doc.type}
+                            </Badge>
+                            <Badge 
+                              variant={doc.status === 'Final' ? 'default' : 'secondary'}
+                              className="text-xs"
+                            >
+                              {doc.status}
+                            </Badge>
+                          </div>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">{doc.projectName}</p>
-                        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">{doc.projectName}</p>
+                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             {new Date(doc.savedAt).toLocaleDateString()}
                           </span>
                           <span className="flex items-center gap-1">
                             <Hash className="h-3 w-3" />
-                            Version {doc.version}
+                            v{doc.version}
                           </span>
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="grid grid-cols-3 gap-2 pt-2">
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="gap-1"
+                          className="gap-1 text-xs h-8"
                           onClick={() => handleDownload(doc, 'tech')}
                         >
                           <Download className="h-3 w-3" />
@@ -699,7 +701,7 @@ This document provides the high-level architecture for the E-Commerce platform m
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="gap-1"
+                          className="gap-1 text-xs h-8"
                           onClick={() => handleViewDocument('tech', doc)}
                         >
                           <Eye className="h-3 w-3" />
@@ -708,7 +710,7 @@ This document provides the high-level architecture for the E-Commerce platform m
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="gap-1"
+                          className="gap-1 text-xs h-8"
                           onClick={() => handleEditTechDoc(doc)}
                         >
                           <Edit3 className="h-3 w-3" />
