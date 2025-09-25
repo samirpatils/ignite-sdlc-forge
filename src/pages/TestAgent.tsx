@@ -313,6 +313,58 @@ test('sample test', async ({ page }) => {
     });
   };
 
+  const handleExecuteSingleTest = async () => {
+    if (!newTestCase.name || !newTestCase.code) {
+      toast({
+        title: "Cannot Execute",
+        description: "Please provide test name and code before execution",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsExecuting(true);
+    
+    // Simulate test execution
+    setTimeout(() => {
+      const isSuccess = Math.random() > 0.3; // 70% success rate for demo
+      setIsExecuting(false);
+      
+      toast({
+        title: isSuccess ? "Test Execution Successful" : "Test Execution Failed",
+        description: isSuccess 
+          ? "Test case executed successfully with Playwright"
+          : "Test case failed during execution. Check the test code and try again.",
+        variant: isSuccess ? "default" : "destructive"
+      });
+    }, 3000);
+  };
+
+  const handleSaveTestCase = () => {
+    if (!newTestCase.name || !newTestCase.description || !newTestCase.module) {
+      toast({
+        title: "Required Fields Missing",
+        description: "Please provide test name, description, and module name",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const testCase: TestCase = {
+      id: Date.now().toString(),
+      ...newTestCase,
+      status: "pending",
+      steps: newTestCase.steps.filter(step => step.trim() !== "")
+    };
+
+    setTestCases(prev => [...prev, testCase]);
+    
+    toast({
+      title: "Test Case Saved",
+      description: `Test case saved to module: ${newTestCase.module}`,
+    });
+  };
+
   const getStatusIcon = (status: TestCase["status"]) => {
     switch (status) {
       case "passed": return <CheckCircle className="h-4 w-4 text-success" />;
@@ -628,7 +680,7 @@ test('sample test', async ({ page }) => {
                   />
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex gap-3 flex-wrap">
                   <Button onClick={handleCreateTestCase} className="gap-2">
                     <Plus className="h-4 w-4" />
                     Create Test Case
@@ -637,7 +689,36 @@ test('sample test', async ({ page }) => {
                     <Upload className="h-4 w-4" />
                     Upload Test File
                   </Button>
+                  <Button 
+                    variant="secondary" 
+                    onClick={handleExecuteSingleTest}
+                    disabled={isExecuting || !newTestCase.name || !newTestCase.code}
+                    className="gap-2"
+                  >
+                    <Play className="h-4 w-4" />
+                    {isExecuting ? "Executing..." : "Execute Test Case"}
+                  </Button>
+                  <Button 
+                    variant="hero" 
+                    onClick={handleSaveTestCase}
+                    disabled={!newTestCase.name || !newTestCase.module}
+                    className="gap-2"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    Save Test Case
+                  </Button>
                 </div>
+
+                {isExecuting && (
+                  <Card className="bg-muted/5 border-warning/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <Play className="h-5 w-5 text-warning animate-pulse" />
+                        <span className="text-sm font-medium">Executing test case...</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
