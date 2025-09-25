@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { 
   ArrowLeft,
@@ -71,6 +73,9 @@ const TestAgent = () => {
   const [selectedModule, setSelectedModule] = useState("");
   const [applicationUrl, setApplicationUrl] = useState("");
   const [credentials, setCredentials] = useState({ username: "", password: "" });
+  const [generatedResults, setGeneratedResults] = useState<{modules: TestModule[], testCases: TestCase[]} | null>(null);
+  const [viewingTestCase, setViewingTestCase] = useState<TestCase | null>(null);
+  const [executingTestId, setExecutingTestId] = useState<string | null>(null);
   const [newTestCase, setNewTestCase] = useState({
     name: "",
     description: "",
@@ -181,42 +186,103 @@ test('add product to cart', async ({ page }) => {
       setProgress(100);
       setIsGenerating(false);
       
-      toast({
-        title: "Tests Generated",
-        description: "Auto-generated test cases based on application analysis"
-      });
+      // Generate multiple test cases across different modules
+      const generatedModules: TestModule[] = [
+        { id: "gen-1", name: "Navigation Tests", description: "Generated navigation and routing tests", testCount: 3 },
+        { id: "gen-2", name: "Form Validation", description: "Generated form input and validation tests", testCount: 4 },
+        { id: "gen-3", name: "API Integration", description: "Generated API endpoint and data flow tests", testCount: 2 },
+        { id: "gen-4", name: "UI Components", description: "Generated component interaction tests", testCount: 5 }
+      ];
 
-      // Add generated test case
-      const generatedTest: TestCase = {
-        id: Date.now().toString(),
-        name: "Auto-Generated Navigation Test",
-        description: "Automatically generated test for main navigation flow",
-        module: selectedModule || "General",
-        steps: [
-          "Navigate to application home page",
-          "Verify page loads successfully",
-          "Check main navigation elements",
-          "Test responsive design"
-        ],
-        expectedResult: "All navigation elements should be functional and responsive",
-        status: "pending",
-        code: `import { test, expect } from '@playwright/test';
+      const generatedTestCases: TestCase[] = [
+        {
+          id: `gen-${Date.now()}-1`,
+          name: "Navigation Menu Test",
+          description: "Test main navigation menu functionality",
+          module: "Navigation Tests",
+          steps: ["Load homepage", "Check navigation visibility", "Click menu items", "Verify page transitions"],
+          expectedResult: "All navigation links should work correctly",
+          status: "pending",
+          code: `import { test, expect } from '@playwright/test';
 
-test('auto-generated navigation test', async ({ page }) => {
+test('navigation menu functionality', async ({ page }) => {
   await page.goto('${applicationUrl}');
-  await expect(page).toHaveTitle(/.+/);
-  
-  // Test main navigation
   const nav = page.locator('nav');
   await expect(nav).toBeVisible();
   
-  // Test responsive design
-  await page.setViewportSize({ width: 375, height: 667 });
-  await expect(nav).toBeVisible();
+  const menuItems = page.locator('nav a');
+  const count = await menuItems.count();
+  expect(count).toBeGreaterThan(0);
 });`
-      };
+        },
+        {
+          id: `gen-${Date.now()}-2`,
+          name: "Form Submission Test",
+          description: "Test form validation and submission",
+          module: "Form Validation",
+          steps: ["Navigate to form", "Fill required fields", "Submit form", "Verify success message"],
+          expectedResult: "Form should submit successfully with valid data",
+          status: "pending",
+          code: `import { test, expect } from '@playwright/test';
 
-      setTestCases(prev => [...prev, generatedTest]);
+test('form validation and submission', async ({ page }) => {
+  await page.goto('${applicationUrl}/form');
+  await page.fill('input[type="email"]', 'test@example.com');
+  await page.fill('input[type="text"]', 'Test User');
+  await page.click('button[type="submit"]');
+  await expect(page.locator('.success-message')).toBeVisible();
+});`
+        },
+        {
+          id: `gen-${Date.now()}-3`,
+          name: "API Data Loading Test",
+          description: "Test API data fetching and display",
+          module: "API Integration",
+          steps: ["Load data page", "Wait for API response", "Verify data display", "Check loading states"],
+          expectedResult: "Data should load and display correctly",
+          status: "pending",
+          code: `import { test, expect } from '@playwright/test';
+
+test('api data loading', async ({ page }) => {
+  await page.goto('${applicationUrl}/data');
+  await page.waitForResponse(response => response.url().includes('/api/'));
+  const dataItems = page.locator('[data-testid="data-item"]');
+  await expect(dataItems.first()).toBeVisible();
+});`
+        },
+        {
+          id: `gen-${Date.now()}-4`,
+          name: "Responsive Design Test",
+          description: "Test responsive layout on different screen sizes",
+          module: "UI Components",
+          steps: ["Load page on desktop", "Resize to tablet", "Resize to mobile", "Verify layout adapts"],
+          expectedResult: "Layout should adapt to different screen sizes",
+          status: "pending",
+          code: `import { test, expect } from '@playwright/test';
+
+test('responsive design', async ({ page }) => {
+  await page.goto('${applicationUrl}');
+  
+  // Test desktop
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await expect(page.locator('header')).toBeVisible();
+  
+  // Test mobile
+  await page.setViewportSize({ width: 375, height: 667 });
+  await expect(page.locator('header')).toBeVisible();
+});`
+        }
+      ];
+
+      setGeneratedResults({
+        modules: generatedModules,
+        testCases: generatedTestCases
+      });
+
+      toast({
+        title: "Tests Generated Successfully",
+        description: `Generated ${generatedTestCases.length} test cases across ${generatedModules.length} modules`
+      });
     }, 5000);
   };
 
@@ -311,6 +377,57 @@ test('sample test', async ({ page }) => {
       title: "Test Case Created",
       description: "New test case has been added successfully"
     });
+  };
+
+  const handleViewTestCase = (testCase: TestCase) => {
+    setViewingTestCase(testCase);
+  };
+
+  const handleExecuteIndividualTest = async (testCaseId: string) => {
+    setExecutingTestId(testCaseId);
+    
+    // Simulate individual test execution
+    setTimeout(() => {
+      const isSuccess = Math.random() > 0.3; // 70% success rate for demo
+      setExecutingTestId(null);
+      
+      if (generatedResults) {
+        setGeneratedResults(prev => ({
+          ...prev!,
+          testCases: prev!.testCases.map(tc => 
+            tc.id === testCaseId 
+              ? { 
+                  ...tc, 
+                  status: isSuccess ? "passed" : "failed",
+                  lastRun: new Date().toLocaleString(),
+                  duration: Math.round((Math.random() * 5 + 1) * 10) / 10
+                }
+              : tc
+          )
+        }));
+      }
+      
+      toast({
+        title: isSuccess ? "Test Passed" : "Test Failed",
+        description: isSuccess 
+          ? "Individual test case executed successfully"
+          : "Test case failed during execution",
+        variant: isSuccess ? "default" : "destructive"
+      });
+    }, 3000);
+  };
+
+  const handleAddGeneratedTests = () => {
+    if (generatedResults) {
+      setTestCases(prev => [...prev, ...generatedResults.testCases]);
+      setModules(prev => [...prev, ...generatedResults.modules]);
+      setGeneratedResults(null);
+      
+      toast({
+        title: "Tests Added",
+        description: "Generated test cases have been added to your test suite"
+      });
+    }
   };
 
   const handleExecuteSingleTest = async () => {
@@ -804,6 +921,146 @@ test('sample test', async ({ page }) => {
                   <Globe className="h-4 w-4" />
                   {isGenerating ? "Generating Tests..." : "Analyze & Generate Tests"}
                 </Button>
+
+                {/* Generated Results Table */}
+                {generatedResults && (
+                  <Card className="bg-gradient-card shadow-soft border-0 mt-6">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="text-lg">Generated Test Results</CardTitle>
+                          <CardDescription>
+                            {generatedResults.testCases.length} test cases generated across {generatedResults.modules.length} modules
+                          </CardDescription>
+                        </div>
+                        <Button onClick={handleAddGeneratedTests} className="gap-2">
+                          <Plus className="h-4 w-4" />
+                          Add All Tests
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-6">
+                        {generatedResults.modules.map((module) => {
+                          const moduleTests = generatedResults.testCases.filter(tc => tc.module === module.name);
+                          return (
+                            <div key={module.id} className="space-y-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h4 className="font-semibold text-lg">{module.name}</h4>
+                                  <p className="text-sm text-muted-foreground">{module.description}</p>
+                                </div>
+                                <Badge variant="secondary">{moduleTests.length} tests</Badge>
+                              </div>
+                              
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Test Case</TableHead>
+                                    <TableHead>Description</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Duration</TableHead>
+                                    <TableHead>Actions</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {moduleTests.map((testCase) => (
+                                    <TableRow key={testCase.id}>
+                                      <TableCell className="font-medium">{testCase.name}</TableCell>
+                                      <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
+                                        {testCase.description}
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge className={getStatusColor(testCase.status)}>
+                                          {testCase.status}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell>
+                                        {testCase.duration ? `${testCase.duration}s` : '-'}
+                                      </TableCell>
+                                      <TableCell>
+                                        <div className="flex gap-2">
+                                          <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            onClick={() => handleViewTestCase(testCase)}
+                                            className="gap-1"
+                                          >
+                                            <FileText className="h-3 w-3" />
+                                            View
+                                          </Button>
+                                          <Button 
+                                            variant="ghost" 
+                                            size="sm"
+                                            onClick={() => handleExecuteIndividualTest(testCase.id)}
+                                            disabled={executingTestId === testCase.id}
+                                            className="gap-1"
+                                          >
+                                            <Play className="h-3 w-3" />
+                                            {executingTestId === testCase.id ? 'Running...' : 'Execute'}
+                                          </Button>
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Test Case View Dialog */}
+                <Dialog open={!!viewingTestCase} onOpenChange={() => setViewingTestCase(null)}>
+                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>{viewingTestCase?.name}</DialogTitle>
+                    </DialogHeader>
+                    {viewingTestCase && (
+                      <div className="space-y-4">
+                        <div>
+                          <Label className="text-sm font-medium">Description</Label>
+                          <p className="text-sm text-muted-foreground mt-1">{viewingTestCase.description}</p>
+                        </div>
+                        
+                        <div>
+                          <Label className="text-sm font-medium">Module</Label>
+                          <Badge variant="outline" className="mt-1">{viewingTestCase.module}</Badge>
+                        </div>
+
+                        <div>
+                          <Label className="text-sm font-medium">Test Steps</Label>
+                          <ul className="mt-2 space-y-1">
+                            {viewingTestCase.steps.map((step, index) => (
+                              <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
+                                <span className="text-primary font-medium mt-0.5">{index + 1}.</span>
+                                {step}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        <div>
+                          <Label className="text-sm font-medium">Expected Result</Label>
+                          <p className="text-sm text-muted-foreground mt-1">{viewingTestCase.expectedResult}</p>
+                        </div>
+
+                        <div>
+                          <Label className="text-sm font-medium">TypeScript Test Code</Label>
+                          <Textarea 
+                            value={viewingTestCase.code}
+                            readOnly
+                            className="font-mono text-sm mt-2"
+                            rows={12}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </DialogContent>
+                </Dialog>
               </CardContent>
             </Card>
           </TabsContent>
