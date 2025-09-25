@@ -9,6 +9,7 @@ import {
   Bot, 
   FileText, 
   Code, 
+  TestTube2,
   Users, 
   Calendar,
   Clock,
@@ -226,6 +227,14 @@ const ProjectInfo = () => {
                 <Code className="h-4 w-4" />
                 Code Agent
               </Button>
+              <Button 
+                variant="outline"
+                onClick={() => navigate("/test-agent", { state: { projectId: project.id, projectName: project.name } })}
+                className="gap-2"
+              >
+                <TestTube2 className="h-4 w-4" />
+                Test Agent
+              </Button>
             </div>
           </div>
         </div>
@@ -424,6 +433,22 @@ const ProjectInfo = () => {
                       <div className="text-left">
                         <div className="font-medium">Code Agent</div>
                         <div className="text-xs text-muted-foreground">Generate and review code</div>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-between gap-2 h-12"
+                    onClick={() => navigate("/test-agent", { state: { projectId: project.id, projectName: project.name } })}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="bg-warning/10 p-2 rounded-lg">
+                        <TestTube2 className="h-4 w-4 text-warning" />
+                      </div>
+                      <div className="text-left">
+                        <div className="font-medium">Test Agent</div>
+                        <div className="text-xs text-muted-foreground">Generate and execute test cases</div>
                       </div>
                     </div>
                     <ChevronRight className="h-4 w-4" />

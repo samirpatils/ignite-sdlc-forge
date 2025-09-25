@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import BRDAgent from "./pages/BRDAgent";
 import TechDocsAgent from "./pages/TechDocsAgent";
 import CodeAgent from "./pages/CodeAgent";
+import TestAgent from "./pages/TestAgent";
 import Repository from "./pages/Repository";
 import NewProject from "./pages/NewProject";
 import Projects from "./pages/Projects";
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/brd-agent" element={<BRDAgent />} />
           <Route path="/tech-docs-agent" element={<TechDocsAgent />} />
           <Route path="/code-agent" element={<CodeAgent />} />
+          <Route path="/test-agent" element={<TestAgent />} />
           <Route path="/repository" element={<Repository />} />
           <Route path="/new-project" element={<NewProject />} />
           <Route path="/projects" element={<Projects />} />
