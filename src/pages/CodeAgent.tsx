@@ -7,6 +7,9 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   ArrowLeft, 
   Code, 
@@ -18,7 +21,11 @@ import {
   FolderTree,
   FileCode,
   Clock,
-  Download
+  Download,
+  GitBranch,
+  Check,
+  Edit,
+  Trash2
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -31,6 +38,29 @@ interface CodeStructure {
   frontend: { [key: string]: string };
   middleware: { [key: string]: string };
   backend: { [key: string]: string };
+}
+
+interface Column {
+  name: string;
+  type: string;
+  description: string;
+  isPrimaryKey?: boolean;
+  isForeignKey?: boolean;
+  isNullable?: boolean;
+}
+
+interface Entity {
+  id: string;
+  name: string;
+  description: string;
+  columns: Column[];
+  isApproved: boolean;
+}
+
+interface ERDiagram {
+  svg: string;
+  entities: Entity[];
+  relationships: string[];
 }
 
 const CodeAgent = () => {
@@ -49,6 +79,15 @@ const CodeAgent = () => {
     middleware: {},
     backend: {}
   });
+
+  // Data Modelling states
+  const [dataModelPrompt, setDataModelPrompt] = useState("");
+  const [isGeneratingER, setIsGeneratingER] = useState(false);
+  const [erDiagram, setErDiagram] = useState<ERDiagram | null>(null);
+  const [entities, setEntities] = useState<Entity[]>([]);
+  const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingEntity, setEditingEntity] = useState<Entity | null>(null);
 
   const codeCategories = [
     {
@@ -227,6 +266,170 @@ const CodeAgent = () => {
     });
   };
 
+  const handleGenerateER = async () => {
+    if (!dataModelPrompt.trim()) return;
+
+    setIsGeneratingER(true);
+    
+    // Simulate ER diagram generation
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Generate mock entities based on prompt
+    const mockEntities: Entity[] = [
+      {
+        id: "1",
+        name: "users",
+        description: "Stores user account information",
+        columns: [
+          { name: "id", type: "UUID", description: "Primary key", isPrimaryKey: true, isNullable: false },
+          { name: "email", type: "VARCHAR(255)", description: "User email address", isNullable: false },
+          { name: "username", type: "VARCHAR(100)", description: "Unique username", isNullable: false },
+          { name: "created_at", type: "TIMESTAMP", description: "Account creation timestamp", isNullable: false },
+        ],
+        isApproved: false
+      },
+      {
+        id: "2",
+        name: "orders",
+        description: "Stores customer orders",
+        columns: [
+          { name: "id", type: "UUID", description: "Primary key", isPrimaryKey: true, isNullable: false },
+          { name: "user_id", type: "UUID", description: "Foreign key to users", isForeignKey: true, isNullable: false },
+          { name: "total_amount", type: "DECIMAL(10,2)", description: "Order total", isNullable: false },
+          { name: "status", type: "VARCHAR(50)", description: "Order status", isNullable: false },
+          { name: "created_at", type: "TIMESTAMP", description: "Order creation timestamp", isNullable: false },
+        ],
+        isApproved: false
+      },
+      {
+        id: "3",
+        name: "products",
+        description: "Stores product information",
+        columns: [
+          { name: "id", type: "UUID", description: "Primary key", isPrimaryKey: true, isNullable: false },
+          { name: "name", type: "VARCHAR(200)", description: "Product name", isNullable: false },
+          { name: "description", type: "TEXT", description: "Product description", isNullable: true },
+          { name: "price", type: "DECIMAL(10,2)", description: "Product price", isNullable: false },
+          { name: "stock_quantity", type: "INTEGER", description: "Available stock", isNullable: false },
+        ],
+        isApproved: false
+      }
+    ];
+
+    // Generate mock ER diagram SVG
+    const mockSVG = `
+      <svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+        <rect x="50" y="50" width="200" height="120" fill="hsl(var(--primary))" opacity="0.1" stroke="hsl(var(--primary))" stroke-width="2" rx="8"/>
+        <text x="150" y="85" text-anchor="middle" fill="hsl(var(--foreground))" font-weight="bold" font-size="16">users</text>
+        <text x="150" y="105" text-anchor="middle" fill="hsl(var(--muted-foreground))" font-size="12">id, email, username</text>
+        
+        <rect x="300" y="50" width="200" height="120" fill="hsl(var(--accent))" opacity="0.1" stroke="hsl(var(--accent))" stroke-width="2" rx="8"/>
+        <text x="400" y="85" text-anchor="middle" fill="hsl(var(--foreground))" font-weight="bold" font-size="16">orders</text>
+        <text x="400" y="105" text-anchor="middle" fill="hsl(var(--muted-foreground))" font-size="12">id, user_id, total_amount</text>
+        
+        <rect x="550" y="50" width="200" height="120" fill="hsl(var(--success))" opacity="0.1" stroke="hsl(var(--success))" stroke-width="2" rx="8"/>
+        <text x="650" y="85" text-anchor="middle" fill="hsl(var(--foreground))" font-weight="bold" font-size="16">products</text>
+        <text x="650" y="105" text-anchor="middle" fill="hsl(var(--muted-foreground))" font-size="12">id, name, price</text>
+        
+        <line x1="250" y1="110" x2="300" y2="110" stroke="hsl(var(--muted-foreground))" stroke-width="2"/>
+        <circle cx="250" cy="110" r="4" fill="hsl(var(--muted-foreground))"/>
+        <text x="275" y="100" text-anchor="middle" fill="hsl(var(--muted-foreground))" font-size="10">1:N</text>
+      </svg>
+    `;
+
+    setErDiagram({
+      svg: mockSVG,
+      entities: mockEntities,
+      relationships: ["users -> orders (1:N)", "orders -> products (N:N)"]
+    });
+    
+    setEntities(mockEntities);
+    setIsGeneratingER(false);
+
+    toast({
+      title: "ER Diagram Generated",
+      description: "Database model has been created from your prompt.",
+    });
+  };
+
+  const handleApproveEntity = (entityId: string) => {
+    setEntities(prev => prev.map(entity => 
+      entity.id === entityId ? { ...entity, isApproved: !entity.isApproved } : entity
+    ));
+    
+    const entity = entities.find(e => e.id === entityId);
+    if (entity && !entity.isApproved) {
+      setSelectedEntity(entity);
+      setEditingEntity({ ...entity });
+      setIsEditDialogOpen(true);
+    }
+  };
+
+  const handleSaveEntity = () => {
+    if (!editingEntity) return;
+
+    setEntities(prev => prev.map(entity => 
+      entity.id === editingEntity.id ? { ...editingEntity, isApproved: true } : entity
+    ));
+
+    setIsEditDialogOpen(false);
+    setEditingEntity(null);
+
+    toast({
+      title: "Entity Approved",
+      description: `Table "${editingEntity.name}" has been approved and saved.`,
+    });
+  };
+
+  const handleUpdateColumn = (columnIndex: number, field: keyof Column, value: string | boolean) => {
+    if (!editingEntity) return;
+
+    const updatedColumns = [...editingEntity.columns];
+    updatedColumns[columnIndex] = { ...updatedColumns[columnIndex], [field]: value };
+
+    setEditingEntity({ ...editingEntity, columns: updatedColumns });
+  };
+
+  const handleGenerateScript = () => {
+    if (!erDiagram || entities.length === 0) return;
+
+    const approvedEntities = entities.filter(e => e.isApproved);
+    
+    let script = "-- Generated Database Schema\n\n";
+    
+    approvedEntities.forEach(entity => {
+      script += `-- Table: ${entity.name}\n`;
+      script += `-- ${entity.description}\n`;
+      script += `CREATE TABLE ${entity.name} (\n`;
+      
+      entity.columns.forEach((column, index) => {
+        script += `  ${column.name} ${column.type}`;
+        if (column.isPrimaryKey) script += " PRIMARY KEY";
+        if (!column.isNullable) script += " NOT NULL";
+        if (index < entity.columns.length - 1) script += ",";
+        script += `\n`;
+      });
+      
+      script += `);\n\n`;
+    });
+
+    // Create and download file
+    const blob = new Blob([script], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'database-schema.sql';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Script Generated",
+      description: "Database schema script has been downloaded.",
+    });
+  };
+
   const renderFileTree = (files: { [key: string]: string }) => {
     return (
       <div className="space-y-1">
@@ -282,9 +485,93 @@ const CodeAgent = () => {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-6">
-          {/* Application Structure with Code Generation */}
-          <Card className="bg-gradient-card shadow-soft border-0">
+        <div className="flex gap-6">
+          {/* Main Content */}
+          <div className="flex-1 space-y-6">
+            {/* Data Modelling Section */}
+            <Card className="bg-gradient-card shadow-soft border-0">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <GitBranch className="h-5 w-5" />
+                  Data Modelling
+                </CardTitle>
+                <CardDescription>
+                  Generate ER diagrams and database schemas from your requirements
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <Label htmlFor="data-prompt">Describe your data model</Label>
+                  <Textarea
+                    id="data-prompt"
+                    placeholder="Example: Create a database for an e-commerce platform with users, products, orders, and payments..."
+                    value={dataModelPrompt}
+                    onChange={(e) => setDataModelPrompt(e.target.value)}
+                    className="min-h-24"
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <Button 
+                    onClick={handleGenerateER}
+                    disabled={!dataModelPrompt.trim() || isGeneratingER}
+                    className="gap-2"
+                  >
+                    <Send className="h-4 w-4" />
+                    {isGeneratingER ? "Generating..." : "Analyze & Generate ER Diagram"}
+                  </Button>
+                  
+                  {erDiagram && entities.filter(e => e.isApproved).length > 0 && (
+                    <Button 
+                      variant="outline"
+                      onClick={handleGenerateScript}
+                      className="gap-2"
+                    >
+                      <Database className="h-4 w-4" />
+                      Generate Script
+                    </Button>
+                  )}
+                </div>
+
+                {isGeneratingER && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock className="h-4 w-4 animate-spin" />
+                    Analyzing data requirements and generating ER diagram...
+                  </div>
+                )}
+
+                {/* ER Diagram Display */}
+                {erDiagram && (
+                  <Card className="bg-muted/5 mt-4">
+                    <CardHeader>
+                      <CardTitle className="text-base">Generated ER Diagram</CardTitle>
+                      <CardDescription>Entity relationships and structure</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div 
+                        className="w-full border rounded-lg p-4 bg-background"
+                        dangerouslySetInnerHTML={{ __html: erDiagram.svg }}
+                      />
+                      
+                      <div className="mt-4 space-y-2">
+                        <h4 className="font-medium text-sm">Relationships:</h4>
+                        <div className="space-y-1">
+                          {erDiagram.relationships.map((rel, index) => (
+                            <div key={index} className="text-sm text-muted-foreground flex items-center gap-2">
+                              <GitBranch className="h-3 w-3" />
+                              {rel}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Application Structure with Code Generation */}
+            <Card className="bg-gradient-card shadow-soft border-0">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FolderTree className="h-5 w-5" />
@@ -429,8 +716,187 @@ const CodeAgent = () => {
               </Tabs>
             </CardContent>
           </Card>
+          </div>
+
+          {/* Right Sidebar - Entity List */}
+          <div className="w-80 space-y-4">
+            <Card className="bg-gradient-card shadow-soft border-0 sticky top-4">
+              <CardHeader>
+                <CardTitle className="text-base">Database Entities</CardTitle>
+                <CardDescription>Review and approve entities</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {entities.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground text-sm">
+                    <Database className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    No entities generated yet
+                  </div>
+                ) : (
+                  entities.map((entity) => (
+                    <Card 
+                      key={entity.id} 
+                      className={`transition-all cursor-pointer ${
+                        entity.isApproved 
+                          ? 'bg-success/10 border-success/50' 
+                          : 'bg-muted/5 hover:bg-muted/10'
+                      }`}
+                      onClick={() => handleApproveEntity(entity.id)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Database className="h-4 w-4" />
+                              <h4 className="font-medium text-sm">{entity.name}</h4>
+                            </div>
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              {entity.description}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              {entity.columns.length} columns
+                            </p>
+                          </div>
+                          <div>
+                            {entity.isApproved ? (
+                              <Badge variant="default" className="gap-1">
+                                <Check className="h-3 w-3" />
+                                Approved
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline">Pending</Badge>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
+
+      {/* Edit Entity Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Review & Edit Entity</DialogTitle>
+            <DialogDescription>
+              Review table and column details before approving
+            </DialogDescription>
+          </DialogHeader>
+
+          {editingEntity && (
+            <div className="space-y-6">
+              {/* Table Information */}
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="table-name">Table Name</Label>
+                  <Input
+                    id="table-name"
+                    value={editingEntity.name}
+                    onChange={(e) => setEditingEntity({ ...editingEntity, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="table-description">Description</Label>
+                  <Textarea
+                    id="table-description"
+                    value={editingEntity.description}
+                    onChange={(e) => setEditingEntity({ ...editingEntity, description: e.target.value })}
+                    className="min-h-20"
+                  />
+                </div>
+              </div>
+
+              {/* Columns */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">Columns ({editingEntity.columns.length})</h4>
+                </div>
+                
+                <div className="space-y-3">
+                  {editingEntity.columns.map((column, index) => (
+                    <Card key={index} className="bg-muted/5">
+                      <CardContent className="p-4 space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-2">
+                            <Label htmlFor={`col-name-${index}`}>Column Name</Label>
+                            <Input
+                              id={`col-name-${index}`}
+                              value={column.name}
+                              onChange={(e) => handleUpdateColumn(index, 'name', e.target.value)}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`col-type-${index}`}>Data Type</Label>
+                            <Input
+                              id={`col-type-${index}`}
+                              value={column.type}
+                              onChange={(e) => handleUpdateColumn(index, 'type', e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor={`col-desc-${index}`}>Description</Label>
+                          <Input
+                            id={`col-desc-${index}`}
+                            value={column.description}
+                            onChange={(e) => handleUpdateColumn(index, 'description', e.target.value)}
+                          />
+                        </div>
+
+                        <div className="flex gap-4">
+                          <label className="flex items-center gap-2 text-sm cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={column.isPrimaryKey || false}
+                              onChange={(e) => handleUpdateColumn(index, 'isPrimaryKey', e.target.checked)}
+                              className="rounded"
+                            />
+                            Primary Key
+                          </label>
+                          <label className="flex items-center gap-2 text-sm cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={column.isForeignKey || false}
+                              onChange={(e) => handleUpdateColumn(index, 'isForeignKey', e.target.checked)}
+                              className="rounded"
+                            />
+                            Foreign Key
+                          </label>
+                          <label className="flex items-center gap-2 text-sm cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={column.isNullable || false}
+                              onChange={(e) => handleUpdateColumn(index, 'isNullable', e.target.checked)}
+                              className="rounded"
+                            />
+                            Nullable
+                          </label>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveEntity} className="gap-2">
+                  <Check className="h-4 w-4" />
+                  Approve & Save
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
