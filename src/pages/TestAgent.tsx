@@ -112,6 +112,7 @@ test('sample test', async ({ page }) => {
   const [vaptUrl, setVaptUrl] = useState("https://your-application.com");
   const [isVaptTesting, setIsVaptTesting] = useState(false);
   const [vaptResults, setVaptResults] = useState<VaptResult[]>([]);
+  const [showBestPractices, setShowBestPractices] = useState(false);
 
   // Mock data initialization
   useEffect(() => {
@@ -831,13 +832,12 @@ test('sample test', async ({ page }) => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="test-cases">Test Cases</TabsTrigger>
             <TabsTrigger value="create">Create Test</TabsTrigger>
             <TabsTrigger value="auto-generate">Auto Generate</TabsTrigger>
             <TabsTrigger value="vapt-testing">VAPT Testing</TabsTrigger>
-            <TabsTrigger value="vapt-practices">Best Practices</TabsTrigger>
             <TabsTrigger value="results">Results</TabsTrigger>
           </TabsList>
 
@@ -1344,13 +1344,26 @@ test('sample test', async ({ page }) => {
           <TabsContent value="vapt-testing" className="space-y-6">
             <Card className="bg-gradient-card shadow-soft border-0">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-primary" />
-                  Vulnerability Assessment & Penetration Testing
-                </CardTitle>
-                <CardDescription>
-                  Automated security testing to identify vulnerabilities in your application
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Shield className="h-5 w-5 text-primary" />
+                      Vulnerability Assessment & Penetration Testing
+                    </CardTitle>
+                    <CardDescription>
+                      Automated security testing to identify vulnerabilities in your application
+                    </CardDescription>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowBestPractices(true)}
+                    className="gap-2"
+                  >
+                    <Info className="h-4 w-4" />
+                    View Best Practices
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
@@ -1437,19 +1450,20 @@ test('sample test', async ({ page }) => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="vapt-practices" className="space-y-6">
-            <Card className="bg-gradient-card shadow-soft border-0">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+          {/* Best Practices Dialog */}
+          <Dialog open={showBestPractices} onOpenChange={setShowBestPractices}>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
                   <Info className="h-5 w-5 text-primary" />
-                  Top 20 VAPT Testing Scenarios
-                </CardTitle>
-                <CardDescription>
-                  Best practices and security testing scenarios to ensure comprehensive vulnerability assessment
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4">
+                  Top 20 VAPT Testing Scenarios - Best Practices
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                <p className="text-sm text-muted-foreground">
+                  Security testing scenarios to ensure comprehensive vulnerability assessment of your application
+                </p>
+                <div className="grid gap-3">
                   {vaptBestPractices.map((scenario, index) => (
                     <Card key={scenario.id} className="bg-muted/5 border">
                       <CardContent className="p-4">
@@ -1457,7 +1471,7 @@ test('sample test', async ({ page }) => {
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                               <span className="text-lg font-bold text-primary">#{index + 1}</span>
-                              <h4 className="font-semibold text-lg">{scenario.title}</h4>
+                              <h4 className="font-semibold">{scenario.title}</h4>
                             </div>
                             <p className="text-sm text-muted-foreground mb-3">{scenario.description}</p>
                             <div className="flex items-center gap-2">
@@ -1472,9 +1486,9 @@ test('sample test', async ({ page }) => {
                     </Card>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           <TabsContent value="results" className="space-y-6">
             <Card className="bg-gradient-card shadow-soft border-0">
