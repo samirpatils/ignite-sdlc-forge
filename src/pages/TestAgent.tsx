@@ -76,6 +76,8 @@ interface VaptScenario {
   description: string;
   severity: "critical" | "high" | "medium" | "low";
   category: string;
+  example: string;
+  testingSteps: string[];
 }
 
 const TestAgent = () => {
@@ -625,142 +627,302 @@ test('sample test', async ({ page }) => {
     {
       id: "1",
       title: "SQL Injection Testing",
-      description: "Test all input fields with SQL injection payloads to verify proper input sanitization",
+      description: "Test all input fields with SQL injection payloads to verify proper input sanitization and parameterized queries are used.",
       severity: "critical",
-      category: "Injection"
+      category: "Injection",
+      example: "Input: admin' OR '1'='1' --\nResult: Should NOT bypass authentication or expose database errors.\n\nVulnerable Code:\nSELECT * FROM users WHERE username = '<user_input>'\n\nSecure Code:\npreparedStatement.setString(1, userInput);",
+      testingSteps: [
+        "Identify all input fields (login forms, search boxes, URL parameters)",
+        "Inject SQL metacharacters: ' \" ; -- /* */",
+        "Try union-based injection: ' UNION SELECT NULL--",
+        "Test for error-based injection to reveal database structure",
+        "Attempt time-based blind injection: ' OR SLEEP(5)--"
+      ]
     },
     {
       id: "2",
       title: "Cross-Site Scripting (XSS)",
-      description: "Verify that user inputs are properly encoded and sanitized to prevent XSS attacks",
+      description: "Verify that user inputs are properly encoded and sanitized to prevent XSS attacks in all contexts (HTML, JavaScript, CSS).",
       severity: "critical",
-      category: "Injection"
+      category: "Injection",
+      example: "Reflected XSS: <script>alert('XSS')</script>\nStored XSS: <img src=x onerror=alert('XSS')>\nDOM XSS: javascript:alert(document.cookie)\n\nSecure Implementation:\n- Use Content Security Policy (CSP)\n- HTML encode: &lt;script&gt; → &lt;script&gt;\n- Use secure frameworks like React that auto-escape",
+      testingSteps: [
+        "Test all input fields with: <script>alert('XSS')</script>",
+        "Try event handlers: <img src=x onerror=alert(1)>",
+        "Test URL parameters: ?name=<script>alert(1)</script>",
+        "Check stored XSS in comments, profiles, messages",
+        "Verify CSP headers are configured properly"
+      ]
     },
     {
       id: "3",
       title: "Authentication Bypass",
-      description: "Test for weak authentication mechanisms and session management vulnerabilities",
+      description: "Test for weak authentication mechanisms, default credentials, and session management vulnerabilities that could allow unauthorized access.",
       severity: "critical",
-      category: "Authentication"
+      category: "Authentication",
+      example: "Common bypass attempts:\n- SQL injection in login: admin' --\n- Password reset token prediction\n- Missing authentication checks on API endpoints\n- JWT token manipulation\n\nTest Case:\nPOST /api/admin/users without authentication\nExpected: 401 Unauthorized\nVulnerable: 200 OK with user data",
+      testingSteps: [
+        "Test default credentials: admin/admin, admin/password",
+        "Try SQL injection in login form",
+        "Access authenticated pages without logging in",
+        "Test password reset mechanism for flaws",
+        "Verify multi-factor authentication cannot be bypassed"
+      ]
     },
     {
       id: "4",
       title: "Broken Access Control",
-      description: "Verify that users cannot access unauthorized resources or perform unauthorized actions",
+      description: "Verify that users cannot access unauthorized resources, escalate privileges, or perform actions beyond their permission level.",
       severity: "critical",
-      category: "Authorization"
+      category: "Authorization",
+      example: "IDOR (Insecure Direct Object Reference):\nGET /api/users/123/profile (normal user)\nGET /api/users/456/profile (should fail but returns data)\n\nPrivilege Escalation:\nPOST /api/admin/delete-user\n{\"userId\": \"123\", \"role\": \"admin\"}\nRegular user should not be able to call admin endpoints",
+      testingSteps: [
+        "Try accessing other users' data by changing IDs in URLs",
+        "Attempt to modify user roles or permissions",
+        "Test horizontal privilege escalation (user A → user B)",
+        "Test vertical privilege escalation (user → admin)",
+        "Check if forced browsing to admin pages is possible"
+      ]
     },
     {
       id: "5",
       title: "Security Misconfiguration",
-      description: "Check for default credentials, unnecessary services, and exposed configuration files",
+      description: "Check for default credentials, unnecessary services, exposed configuration files, and improper error handling that reveals system information.",
       severity: "high",
-      category: "Configuration"
+      category: "Configuration",
+      example: "Common misconfigurations:\n- Exposed .git, .env, config.php files\n- Directory listing enabled\n- Default admin panels: /admin, /phpmyadmin\n- Detailed error messages in production\n\nTest:\nGET /.env → Should return 403/404, not file contents\nGET /admin → Should require strong authentication",
+      testingSteps: [
+        "Check for exposed configuration files: /.git, /.env, /config",
+        "Test for directory listing on /uploads, /files",
+        "Verify detailed error messages are disabled in production",
+        "Check for default admin credentials",
+        "Test unnecessary HTTP methods (PUT, DELETE, TRACE)"
+      ]
     },
     {
       id: "6",
       title: "Sensitive Data Exposure",
-      description: "Ensure sensitive data is encrypted in transit and at rest",
+      description: "Ensure sensitive data (passwords, credit cards, PII) is encrypted in transit (TLS) and at rest, with proper key management.",
       severity: "high",
-      category: "Data Protection"
+      category: "Data Protection",
+      example: "Data exposure risks:\n- Passwords stored in plaintext or weak hashing (MD5)\n- Credit card numbers in logs or URLs\n- Unencrypted HTTP connections\n- Sensitive data in browser cache/localStorage\n\nSecure:\n- Use bcrypt/Argon2 for password hashing\n- TLS 1.2+ for all connections\n- Encrypt database fields with AES-256",
+      testingSteps: [
+        "Verify all authentication uses HTTPS, not HTTP",
+        "Check if sensitive data appears in URLs or logs",
+        "Test if passwords are hashed (not encrypted or plaintext)",
+        "Verify credit card data is tokenized, not stored",
+        "Check browser cache doesn't store sensitive info"
+      ]
     },
     {
       id: "7",
       title: "XML External Entities (XXE)",
-      description: "Test XML parsers for XXE vulnerabilities that can lead to data disclosure",
+      description: "Test XML parsers for XXE vulnerabilities that can lead to file disclosure, SSRF, or denial of service.",
       severity: "high",
-      category: "Injection"
+      category: "Injection",
+      example: "XXE Attack Payload:\n<?xml version=\"1.0\"?>\n<!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]>\n<userInfo><name>&xxe;</name></userInfo>\n\nThis can read /etc/passwd file if XML parser is vulnerable.\n\nSecure Parsing:\nDisable external entity processing:\nlibxml_disable_entity_loader(true);",
+      testingSteps: [
+        "Identify XML input points (SOAP, RSS, file uploads)",
+        "Submit XXE payload to read local files",
+        "Test for SSRF via XXE: <!ENTITY xxe SYSTEM \"http://internal\">",
+        "Try XML bomb (billion laughs attack) for DoS",
+        "Verify XML parser has external entities disabled"
+      ]
     },
     {
       id: "8",
       title: "Insecure Deserialization",
-      description: "Verify that deserialization of untrusted data is properly handled",
+      description: "Verify that deserialization of untrusted data is properly validated to prevent remote code execution.",
       severity: "high",
-      category: "Injection"
+      category: "Injection",
+      example: "Vulnerable deserialization in Python:\nimport pickle\ndata = pickle.loads(user_input)  # DANGEROUS!\n\nAttacker sends malicious serialized object:\nclass Exploit:\n  def __reduce__(self):\n    return (os.system, ('rm -rf /',))\n\nSecure approach:\n- Use JSON instead of pickle/serialize\n- Validate object types before deserialization\n- Sign serialized data with HMAC",
+      testingSteps: [
+        "Identify deserialization points (cookies, tokens, API requests)",
+        "Test with modified serialized objects",
+        "Check if object type validation is performed",
+        "Verify digital signatures on serialized data",
+        "Test for Java deserialization vulnerabilities in base64-encoded data"
+      ]
     },
     {
       id: "9",
       title: "Using Components with Known Vulnerabilities",
-      description: "Identify and update outdated libraries and frameworks with known vulnerabilities",
+      description: "Identify and update outdated libraries, frameworks, and dependencies with publicly disclosed vulnerabilities (CVEs).",
       severity: "high",
-      category: "Dependencies"
+      category: "Dependencies",
+      example: "Example vulnerable dependencies:\n- jQuery < 3.5.0 (XSS vulnerability)\n- Log4j 2.x < 2.17.0 (Remote Code Execution)\n- Spring Framework < 5.3.18 (Spring4Shell RCE)\n\nDetection tools:\n- npm audit / yarn audit\n- OWASP Dependency-Check\n- Snyk, GitHub Dependabot",
+      testingSteps: [
+        "Run dependency scanning: npm audit, pip-audit",
+        "Check for outdated packages: npm outdated",
+        "Review security advisories for used components",
+        "Test known CVEs against detected versions",
+        "Verify automated dependency updates are configured"
+      ]
     },
     {
       id: "10",
       title: "Insufficient Logging & Monitoring",
-      description: "Ensure critical security events are logged and monitored",
+      description: "Ensure critical security events (login failures, access control breaches) are logged, monitored, and alerts are configured.",
       severity: "medium",
-      category: "Monitoring"
+      category: "Monitoring",
+      example: "Events that MUST be logged:\n- Failed login attempts (username, IP, timestamp)\n- Privilege escalation attempts\n- Input validation failures\n- Authentication token anomalies\n\nDO NOT log:\n- Passwords or session tokens\n- Credit card numbers\n- Personal sensitive data\n\nExample log:\n{\"event\": \"failed_login\", \"user\": \"admin\", \"ip\": \"1.2.3.4\", \"time\": \"2024-01-20T10:30:00Z\"}",
+      testingSteps: [
+        "Attempt multiple failed logins - check if logged",
+        "Try unauthorized access - verify logging",
+        "Check if sensitive data appears in logs",
+        "Verify log tampering is prevented (write-only access)",
+        "Test if alerts trigger for suspicious activities"
+      ]
     },
     {
       id: "11",
       title: "CSRF Token Validation",
-      description: "Verify that all state-changing operations require valid CSRF tokens",
+      description: "Verify that all state-changing operations (POST, PUT, DELETE) require valid CSRF tokens to prevent Cross-Site Request Forgery.",
       severity: "high",
-      category: "Session Management"
+      category: "Session Management",
+      example: "CSRF Attack:\n<img src=\"https://bank.com/transfer?to=attacker&amount=1000\">\n\nVulnerable form:\n<form action=\"/transfer\" method=\"POST\">\n  <input name=\"to\" value=\"attacker\">\n</form>\n\nSecure form:\n<form action=\"/transfer\" method=\"POST\">\n  <input type=\"hidden\" name=\"csrf_token\" value=\"abc123xyz\">\n  <input name=\"to\">\n</form>\n\nServer validates csrf_token matches session",
+      testingSteps: [
+        "Identify state-changing operations (update profile, transfer money)",
+        "Submit request without CSRF token - should fail",
+        "Try to reuse old/expired CSRF tokens",
+        "Test if GET requests can perform state changes",
+        "Verify CSRF token is unique per session"
+      ]
     },
     {
       id: "12",
       title: "Clickjacking Protection",
-      description: "Test for X-Frame-Options and CSP frame-ancestors directives",
+      description: "Test for X-Frame-Options and CSP frame-ancestors headers to prevent UI redress attacks where site is embedded in malicious iframe.",
       severity: "medium",
-      category: "Client-Side"
+      category: "Client-Side",
+      example: "Clickjacking attack:\n<iframe src=\"https://bank.com/transfer\"></iframe>\n<button style=\"opacity:0; position:absolute\">Win Prize</button>\n\nUser thinks they're clicking 'Win Prize' but actually clicking 'Transfer Money'\n\nProtection headers:\nX-Frame-Options: DENY\nContent-Security-Policy: frame-ancestors 'none'\n\nTest: Try embedding site in iframe, should be blocked",
+      testingSteps: [
+        "Check for X-Frame-Options header in response",
+        "Verify CSP frame-ancestors directive",
+        "Try loading site in iframe - should fail",
+        "Test if frame-busting JavaScript is used",
+        "Verify sensitive pages cannot be framed"
+      ]
     },
     {
       id: "13",
       title: "Directory Traversal",
-      description: "Test file upload and download functionality for path traversal vulnerabilities",
+      description: "Test file operations for path traversal vulnerabilities that allow access to files outside intended directory.",
       severity: "high",
-      category: "File Operations"
+      category: "File Operations",
+      example: "Path Traversal Attack:\nGET /download?file=../../../etc/passwd\nGET /api/files?path=....//....//etc/passwd\n\nVulnerable code:\nfile_path = '/uploads/' + user_input\nopen(file_path)  # Can access any file!\n\nSecure code:\nimport os\nbase_dir = '/uploads/'\nfile_path = os.path.join(base_dir, user_input)\nif not file_path.startswith(base_dir):\n  raise SecurityError()",
+      testingSteps: [
+        "Test file parameters with: ../../../etc/passwd",
+        "Try URL encoding: %2e%2e%2f (../) bypass",
+        "Test double encoding: %252e%252e%252f",
+        "Try absolute paths: /etc/passwd",
+        "Verify file access is restricted to allowed directories"
+      ]
     },
     {
       id: "14",
       title: "Remote Code Execution",
-      description: "Test for vulnerabilities that allow arbitrary code execution on the server",
+      description: "Test for vulnerabilities that allow execution of arbitrary code on the server (command injection, unsafe eval, template injection).",
       severity: "critical",
-      category: "Injection"
+      category: "Injection",
+      example: "Command Injection:\nping -c 1 user_input\nAttack: 127.0.0.1; cat /etc/passwd\n\nTemplate Injection:\n{{7*7}} → renders as 49 (vulnerable)\n{{config.items()}} → exposes config\n\nCode Injection:\neval(user_input)  # NEVER do this!\n\nSecure: Use parameterized commands, avoid eval, sanitize template inputs",
+      testingSteps: [
+        "Test input fields with: ; ls -la",
+        "Try command chaining: | whoami, && cat /etc/passwd",
+        "Test template injection: {{7*7}}, ${7*7}",
+        "Check for code injection: eval(), exec() with user input",
+        "Verify input validation and whitelisting"
+      ]
     },
     {
       id: "15",
       title: "Business Logic Flaws",
-      description: "Test for flaws in business logic that can be exploited for unauthorized gains",
+      description: "Test for flaws in application logic that can be exploited: race conditions, price manipulation, workflow bypasses.",
       severity: "high",
-      category: "Logic"
+      category: "Logic",
+      example: "Race Condition:\n1. User has $100 balance\n2. Initiate two simultaneous $100 withdrawals\n3. Both succeed, user has -$100 (lack of transaction locking)\n\nPrice Manipulation:\nPOST /checkout\n{\"productId\": 123, \"price\": 1.00, \"quantity\": 1}\nAttacker changes price from $1000 to $1\n\nWorkflow Bypass:\nSkip payment step by directly accessing /order-complete",
+      testingSteps: [
+        "Test concurrent requests for race conditions",
+        "Manipulate prices, quantities in request body",
+        "Skip workflow steps (payment, verification)",
+        "Test negative numbers in quantity/amount fields",
+        "Verify all business rules are enforced server-side"
+      ]
     },
     {
       id: "16",
       title: "Rate Limiting & DoS Protection",
-      description: "Verify that API endpoints have proper rate limiting to prevent abuse",
+      description: "Verify API endpoints and critical functions have rate limiting to prevent brute force attacks and denial of service.",
       severity: "medium",
-      category: "Availability"
+      category: "Availability",
+      example: "Without rate limiting:\n- Attacker tries 10,000 passwords/sec on login\n- API abuse costs $1000s in cloud bills\n- Account enumeration via timing\n\nRate limiting:\n429 Too Many Requests\nRetry-After: 60\n\nImplementation:\n- Login: 5 attempts per 15 minutes per IP\n- API: 100 requests per hour per user\n- Password reset: 3 per hour per account",
+      testingSteps: [
+        "Send 100+ rapid requests to login endpoint",
+        "Verify 429 status code returned after limit",
+        "Check Retry-After header is present",
+        "Test if rate limit is per IP, user, or both",
+        "Verify rate limits on expensive operations (search, file uploads)"
+      ]
     },
     {
       id: "17",
       title: "Password Reset Token Security",
-      description: "Test password reset mechanism for token predictability and expiration",
+      description: "Test password reset mechanism for token predictability, expiration, single-use enforcement, and information disclosure.",
       severity: "high",
-      category: "Authentication"
+      category: "Authentication",
+      example: "Vulnerabilities:\n- Predictable tokens: token=12345 (easily guessable)\n- No expiration: token works forever\n- Reusable tokens: can reset multiple times\n- Token in URL: logged in browser history\n\nSecure implementation:\n- Cryptographically random tokens (32+ bytes)\n- Expire after 1 hour\n- Single use only\n- Invalidate on password change\n- No username/email disclosure",
+      testingSteps: [
+        "Request password reset, analyze token randomness",
+        "Try using token multiple times - should fail after first use",
+        "Test if token expires (wait 1+ hour)",
+        "Check if old tokens invalidate after password change",
+        "Verify reset doesn't disclose if email exists"
+      ]
     },
     {
       id: "18",
       title: "API Security Testing",
-      description: "Test REST/GraphQL APIs for authentication, authorization, and input validation issues",
+      description: "Test REST/GraphQL APIs for authentication, authorization, injection flaws, and excessive data exposure.",
       severity: "high",
-      category: "API"
+      category: "API",
+      example: "API vulnerabilities:\n\n1. Missing authentication:\nGET /api/users → returns all users (no auth!)\n\n2. IDOR:\nGET /api/orders/123 → user A sees user B's order\n\n3. Mass assignment:\nPOST /api/users {\"name\": \"Bob\", \"isAdmin\": true}\n\n4. GraphQL introspection:\nquery { __schema { types { name } } }\nExposes entire API schema\n\nSecure: Require auth, validate IDs, whitelist fields, disable introspection in production",
+      testingSteps: [
+        "Test API endpoints without authentication",
+        "Try accessing other users' resources (IDOR)",
+        "Test for SQL injection in query parameters",
+        "Check for excessive data exposure in responses",
+        "Verify rate limiting on API endpoints"
+      ]
     },
     {
       id: "19",
       title: "Session Fixation & Hijacking",
-      description: "Verify session tokens are regenerated after authentication and properly secured",
+      description: "Verify session IDs are regenerated after login, properly secured (HttpOnly, Secure flags), and not predictable.",
       severity: "high",
-      category: "Session Management"
+      category: "Session Management",
+      example: "Session Fixation:\n1. Attacker gets session ID: SESSID=abc123\n2. Victim logs in with same SESSID\n3. Attacker now logged in as victim\n\nSession Hijacking:\nsteal cookie via XSS: document.cookie\n\nSecure cookies:\nSet-Cookie: SESSID=xyz789; HttpOnly; Secure; SameSite=Strict\n- HttpOnly: JavaScript cannot access\n- Secure: Only sent over HTTPS\n- SameSite: CSRF protection",
+      testingSteps: [
+        "Note session ID before login, verify it changes after",
+        "Check cookie flags: HttpOnly, Secure, SameSite",
+        "Test if session survives logout (should not)",
+        "Try session hijacking with stolen cookie",
+        "Verify session timeout after inactivity"
+      ]
     },
     {
       id: "20",
       title: "Content Security Policy",
-      description: "Verify CSP headers are properly configured to mitigate XSS and data injection attacks",
+      description: "Verify CSP headers restrict resource loading to trusted sources, preventing XSS and data injection attacks.",
       severity: "medium",
-      category: "Client-Side"
+      category: "Client-Side",
+      example: "Weak CSP:\nContent-Security-Policy: default-src *\n(Allows loading from anywhere - useless!)\n\nStrong CSP:\nContent-Security-Policy: \n  default-src 'self'; \n  script-src 'self' https://trusted-cdn.com; \n  style-src 'self' 'unsafe-inline'; \n  img-src 'self' data: https:;\n  connect-src 'self' https://api.example.com;\n\nThis blocks inline scripts and untrusted sources",
+      testingSteps: [
+        "Check for Content-Security-Policy header",
+        "Verify 'unsafe-inline' and 'unsafe-eval' are not used",
+        "Test if inline scripts are blocked",
+        "Try loading resources from untrusted domains",
+        "Use CSP Evaluator tool to assess policy strength"
+      ]
     }
   ];
 
@@ -1452,7 +1614,7 @@ test('sample test', async ({ page }) => {
 
           {/* Best Practices Dialog */}
           <Dialog open={showBestPractices} onOpenChange={setShowBestPractices}>
-            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Info className="h-5 w-5 text-primary" />
@@ -1461,25 +1623,47 @@ test('sample test', async ({ page }) => {
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 <p className="text-sm text-muted-foreground">
-                  Security testing scenarios to ensure comprehensive vulnerability assessment of your application
+                  Comprehensive security testing scenarios with detailed examples and testing steps for vulnerability assessment
                 </p>
-                <div className="grid gap-3">
+                <div className="grid gap-4">
                   {vaptBestPractices.map((scenario, index) => (
                     <Card key={scenario.id} className="bg-muted/5 border">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <span className="text-lg font-bold text-primary">#{index + 1}</span>
-                              <h4 className="font-semibold">{scenario.title}</h4>
+                      <CardContent className="p-5">
+                        <div className="space-y-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                              <span className="text-xl font-bold text-primary">#{index + 1}</span>
+                              <h4 className="font-semibold text-lg">{scenario.title}</h4>
                             </div>
-                            <p className="text-sm text-muted-foreground mb-3">{scenario.description}</p>
                             <div className="flex items-center gap-2">
                               <Badge variant="outline" className="text-xs">{scenario.category}</Badge>
                               <Badge className={getSeverityColor(scenario.severity)}>
                                 {scenario.severity.toUpperCase()}
                               </Badge>
                             </div>
+                          </div>
+                          
+                          <p className="text-sm text-muted-foreground">{scenario.description}</p>
+                          
+                          <div className="space-y-2">
+                            <Label className="text-sm font-semibold">Example & Explanation:</Label>
+                            <div className="bg-muted/30 p-3 rounded-md">
+                              <pre className="text-xs whitespace-pre-wrap font-mono text-foreground">
+{scenario.example}
+                              </pre>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-sm font-semibold">Testing Steps:</Label>
+                            <ul className="space-y-1.5">
+                              {scenario.testingSteps.map((step, stepIndex) => (
+                                <li key={stepIndex} className="text-sm text-muted-foreground flex items-start gap-2">
+                                  <span className="text-primary font-medium mt-0.5">{stepIndex + 1}.</span>
+                                  <span>{step}</span>
+                                </li>
+                              ))}
+                            </ul>
                           </div>
                         </div>
                       </CardContent>
