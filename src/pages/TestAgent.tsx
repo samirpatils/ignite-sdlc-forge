@@ -29,7 +29,10 @@ import {
   Settings,
   TestTube2,
   Target,
-  Globe
+  Globe,
+  Shield,
+  ShieldAlert,
+  Info
 } from "lucide-react";
 
 interface LocationState {
@@ -56,6 +59,23 @@ interface TestModule {
   name: string;
   description: string;
   testCount: number;
+}
+
+interface VaptResult {
+  id: string;
+  vulnerability: string;
+  severity: "critical" | "high" | "medium" | "low" | "info";
+  description: string;
+  affected: string;
+  recommendation: string;
+}
+
+interface VaptScenario {
+  id: string;
+  title: string;
+  description: string;
+  severity: "critical" | "high" | "medium" | "low";
+  category: string;
 }
 
 const TestAgent = () => {
@@ -89,6 +109,9 @@ test('sample test', async ({ page }) => {
   await expect(page).toHaveTitle(/Expected Title/);
 });`
   });
+  const [vaptUrl, setVaptUrl] = useState("https://your-application.com");
+  const [isVaptTesting, setIsVaptTesting] = useState(false);
+  const [vaptResults, setVaptResults] = useState<VaptResult[]>([]);
 
   // Mock data initialization
   useEffect(() => {
@@ -500,6 +523,257 @@ test('sample test', async ({ page }) => {
     }
   };
 
+  const handleVaptTest = async () => {
+    if (!vaptUrl) {
+      toast({
+        title: "URL Required",
+        description: "Please provide an application URL for VAPT testing",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsVaptTesting(true);
+    setProgress(0);
+
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return 90;
+        }
+        return prev + 10;
+      });
+    }, 600);
+
+    setTimeout(() => {
+      clearInterval(progressInterval);
+      setProgress(100);
+      setIsVaptTesting(false);
+
+      // Generate mock VAPT results
+      const mockResults: VaptResult[] = [
+        {
+          id: "1",
+          vulnerability: "SQL Injection",
+          severity: "critical",
+          description: "Application is vulnerable to SQL injection attacks in the login form",
+          affected: "/api/auth/login",
+          recommendation: "Use parameterized queries and input validation"
+        },
+        {
+          id: "2",
+          vulnerability: "Cross-Site Scripting (XSS)",
+          severity: "high",
+          description: "User input is not properly sanitized, allowing XSS attacks",
+          affected: "/search, /comment sections",
+          recommendation: "Implement Content Security Policy and encode all user inputs"
+        },
+        {
+          id: "3",
+          vulnerability: "Insecure Direct Object Reference",
+          severity: "high",
+          description: "Users can access unauthorized resources by modifying URL parameters",
+          affected: "/api/users/:id",
+          recommendation: "Implement proper authorization checks"
+        },
+        {
+          id: "4",
+          vulnerability: "Missing Security Headers",
+          severity: "medium",
+          description: "Critical security headers are not configured",
+          affected: "All endpoints",
+          recommendation: "Add X-Frame-Options, X-Content-Type-Options, and Strict-Transport-Security headers"
+        },
+        {
+          id: "5",
+          vulnerability: "Weak Password Policy",
+          severity: "medium",
+          description: "Password requirements are too weak",
+          affected: "/register",
+          recommendation: "Enforce minimum 12 characters with complexity requirements"
+        },
+        {
+          id: "6",
+          vulnerability: "Information Disclosure",
+          severity: "low",
+          description: "Server version information exposed in response headers",
+          affected: "All endpoints",
+          recommendation: "Remove or obfuscate server version headers"
+        },
+        {
+          id: "7",
+          vulnerability: "SSL/TLS Configuration",
+          severity: "info",
+          description: "Application supports outdated TLS protocols",
+          affected: "HTTPS endpoints",
+          recommendation: "Disable TLS 1.0 and 1.1, support only TLS 1.2 and above"
+        }
+      ];
+
+      setVaptResults(mockResults);
+
+      toast({
+        title: "VAPT Scan Complete",
+        description: `Found ${mockResults.length} security findings`
+      });
+    }, 6000);
+  };
+
+  const vaptBestPractices: VaptScenario[] = [
+    {
+      id: "1",
+      title: "SQL Injection Testing",
+      description: "Test all input fields with SQL injection payloads to verify proper input sanitization",
+      severity: "critical",
+      category: "Injection"
+    },
+    {
+      id: "2",
+      title: "Cross-Site Scripting (XSS)",
+      description: "Verify that user inputs are properly encoded and sanitized to prevent XSS attacks",
+      severity: "critical",
+      category: "Injection"
+    },
+    {
+      id: "3",
+      title: "Authentication Bypass",
+      description: "Test for weak authentication mechanisms and session management vulnerabilities",
+      severity: "critical",
+      category: "Authentication"
+    },
+    {
+      id: "4",
+      title: "Broken Access Control",
+      description: "Verify that users cannot access unauthorized resources or perform unauthorized actions",
+      severity: "critical",
+      category: "Authorization"
+    },
+    {
+      id: "5",
+      title: "Security Misconfiguration",
+      description: "Check for default credentials, unnecessary services, and exposed configuration files",
+      severity: "high",
+      category: "Configuration"
+    },
+    {
+      id: "6",
+      title: "Sensitive Data Exposure",
+      description: "Ensure sensitive data is encrypted in transit and at rest",
+      severity: "high",
+      category: "Data Protection"
+    },
+    {
+      id: "7",
+      title: "XML External Entities (XXE)",
+      description: "Test XML parsers for XXE vulnerabilities that can lead to data disclosure",
+      severity: "high",
+      category: "Injection"
+    },
+    {
+      id: "8",
+      title: "Insecure Deserialization",
+      description: "Verify that deserialization of untrusted data is properly handled",
+      severity: "high",
+      category: "Injection"
+    },
+    {
+      id: "9",
+      title: "Using Components with Known Vulnerabilities",
+      description: "Identify and update outdated libraries and frameworks with known vulnerabilities",
+      severity: "high",
+      category: "Dependencies"
+    },
+    {
+      id: "10",
+      title: "Insufficient Logging & Monitoring",
+      description: "Ensure critical security events are logged and monitored",
+      severity: "medium",
+      category: "Monitoring"
+    },
+    {
+      id: "11",
+      title: "CSRF Token Validation",
+      description: "Verify that all state-changing operations require valid CSRF tokens",
+      severity: "high",
+      category: "Session Management"
+    },
+    {
+      id: "12",
+      title: "Clickjacking Protection",
+      description: "Test for X-Frame-Options and CSP frame-ancestors directives",
+      severity: "medium",
+      category: "Client-Side"
+    },
+    {
+      id: "13",
+      title: "Directory Traversal",
+      description: "Test file upload and download functionality for path traversal vulnerabilities",
+      severity: "high",
+      category: "File Operations"
+    },
+    {
+      id: "14",
+      title: "Remote Code Execution",
+      description: "Test for vulnerabilities that allow arbitrary code execution on the server",
+      severity: "critical",
+      category: "Injection"
+    },
+    {
+      id: "15",
+      title: "Business Logic Flaws",
+      description: "Test for flaws in business logic that can be exploited for unauthorized gains",
+      severity: "high",
+      category: "Logic"
+    },
+    {
+      id: "16",
+      title: "Rate Limiting & DoS Protection",
+      description: "Verify that API endpoints have proper rate limiting to prevent abuse",
+      severity: "medium",
+      category: "Availability"
+    },
+    {
+      id: "17",
+      title: "Password Reset Token Security",
+      description: "Test password reset mechanism for token predictability and expiration",
+      severity: "high",
+      category: "Authentication"
+    },
+    {
+      id: "18",
+      title: "API Security Testing",
+      description: "Test REST/GraphQL APIs for authentication, authorization, and input validation issues",
+      severity: "high",
+      category: "API"
+    },
+    {
+      id: "19",
+      title: "Session Fixation & Hijacking",
+      description: "Verify session tokens are regenerated after authentication and properly secured",
+      severity: "high",
+      category: "Session Management"
+    },
+    {
+      id: "20",
+      title: "Content Security Policy",
+      description: "Verify CSP headers are properly configured to mitigate XSS and data injection attacks",
+      severity: "medium",
+      category: "Client-Side"
+    }
+  ];
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case "critical": return "bg-destructive text-destructive-foreground";
+      case "high": return "bg-orange-500/10 text-orange-500 border-orange-500/20";
+      case "medium": return "bg-warning/10 text-warning border-warning/20";
+      case "low": return "bg-blue-500/10 text-blue-500 border-blue-500/20";
+      case "info": return "bg-muted/10 text-muted-foreground border-muted/20";
+      default: return "bg-muted/10 text-muted-foreground border-muted/20";
+    }
+  };
+
   const passedTests = testCases.filter(t => t.status === "passed").length;
   const failedTests = testCases.filter(t => t.status === "failed").length;
   const totalTests = testCases.length;
@@ -557,11 +831,13 @@ test('sample test', async ({ page }) => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="test-cases">Test Cases</TabsTrigger>
             <TabsTrigger value="create">Create Test</TabsTrigger>
             <TabsTrigger value="auto-generate">Auto Generate</TabsTrigger>
+            <TabsTrigger value="vapt-testing">VAPT Testing</TabsTrigger>
+            <TabsTrigger value="vapt-practices">Best Practices</TabsTrigger>
             <TabsTrigger value="results">Results</TabsTrigger>
           </TabsList>
 
@@ -1061,6 +1337,141 @@ test('sample test', async ({ page }) => {
                     )}
                   </DialogContent>
                 </Dialog>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="vapt-testing" className="space-y-6">
+            <Card className="bg-gradient-card shadow-soft border-0">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-primary" />
+                  Vulnerability Assessment & Penetration Testing
+                </CardTitle>
+                <CardDescription>
+                  Automated security testing to identify vulnerabilities in your application
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <Label htmlFor="vaptUrl">Application URL</Label>
+                  <Input 
+                    id="vaptUrl"
+                    type="url"
+                    value={vaptUrl}
+                    onChange={(e) => setVaptUrl(e.target.value)}
+                    placeholder="https://your-application.com"
+                  />
+                </div>
+
+                {isVaptTesting && (
+                  <Card className="bg-muted/5 border-warning/20">
+                    <CardContent className="p-6">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <ShieldAlert className="h-5 w-5 text-warning animate-pulse" />
+                          <span className="font-medium">Running Security Scan...</span>
+                        </div>
+                        <Progress value={progress} className="w-full" />
+                        <div className="space-y-2 text-sm text-muted-foreground">
+                          <p>• Checking for SQL injection vulnerabilities</p>
+                          <p>• Testing XSS attack vectors</p>
+                          <p>• Analyzing authentication mechanisms</p>
+                          <p>• Scanning for security misconfigurations</p>
+                          <p>• Checking SSL/TLS configuration</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <Button 
+                  onClick={handleVaptTest}
+                  disabled={isVaptTesting || !vaptUrl}
+                  className="gap-2"
+                  size="lg"
+                >
+                  <ShieldAlert className="h-4 w-4" />
+                  {isVaptTesting ? "Scanning Application..." : "Test Application for VAPT"}
+                </Button>
+
+                {vaptResults.length > 0 && (
+                  <Card className="bg-gradient-card shadow-soft border-0 mt-6">
+                    <CardHeader>
+                      <CardTitle className="text-lg">Security Findings</CardTitle>
+                      <CardDescription>
+                        {vaptResults.length} vulnerabilities discovered
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Vulnerability</TableHead>
+                            <TableHead>Severity</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Affected</TableHead>
+                            <TableHead>Recommendation</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {vaptResults.map((result) => (
+                            <TableRow key={result.id}>
+                              <TableCell className="font-medium">{result.vulnerability}</TableCell>
+                              <TableCell>
+                                <Badge className={getSeverityColor(result.severity)}>
+                                  {result.severity.toUpperCase()}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-sm max-w-xs">{result.description}</TableCell>
+                              <TableCell className="text-sm text-muted-foreground">{result.affected}</TableCell>
+                              <TableCell className="text-sm max-w-xs">{result.recommendation}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="vapt-practices" className="space-y-6">
+            <Card className="bg-gradient-card shadow-soft border-0">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Info className="h-5 w-5 text-primary" />
+                  Top 20 VAPT Testing Scenarios
+                </CardTitle>
+                <CardDescription>
+                  Best practices and security testing scenarios to ensure comprehensive vulnerability assessment
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4">
+                  {vaptBestPractices.map((scenario, index) => (
+                    <Card key={scenario.id} className="bg-muted/5 border">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className="text-lg font-bold text-primary">#{index + 1}</span>
+                              <h4 className="font-semibold text-lg">{scenario.title}</h4>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-3">{scenario.description}</p>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">{scenario.category}</Badge>
+                              <Badge className={getSeverityColor(scenario.severity)}>
+                                {scenario.severity.toUpperCase()}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
